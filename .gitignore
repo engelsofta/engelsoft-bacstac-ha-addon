@@ -1,0 +1,17 @@
+# Editor and operating-system files
+.vs/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Python-generated files
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Local environments and secrets
+.env
+.venv/
+venv/
+*.local

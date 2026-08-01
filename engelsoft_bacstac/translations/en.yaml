@@ -1,0 +1,49 @@
+configuration:
+  objectName:
+    name: Device Name
+    description: The name of the interface in the BACnet network.
+  address:
+    name: Interface IP
+    description: BACnet/IP host address. "auto" tries to automatically get your IP. x.x.x.x/24 format.
+  objectIdentifier:
+    name: Device ID
+    description: The identifier (number) of the interface.
+  defaultPriority:
+    name: BACnet write priority
+    description: Priority of the BACnet write request. Priority 1 is highest, priority 16 is lowest it can go.
+  subscription_mode:
+    name: Integration update mode
+    description: "Controls how Engelsoft BACstac works with Engelsoft Beacon BACnet/IP. legacy uses the device rules configured below. managed_polling lets the integration provide the required BACnet objects and polls only those objects. managed_cov lets the integration provide the required objects and creates Change of Value subscriptions for them; this is the recommended mode when the BACnet devices support COV."
+  managed_poll_rate:
+    name: Managed polling interval
+    description: Polling interval in seconds when managed_polling is selected. Lower values update faster but generate more BACnet traffic.
+  loglevel:
+    name: Level of Logging
+    description: The severity of log messages being displayed.
+  maxApduLenghtAccepted: 
+    name: Maximum  APDU Length Accepted
+    description: Maximum amount of Application Layer Protocol Data Units allowed.
+  segmentation:
+    name: Segmentation Supported
+    description: Supported segmentation type of the interface.
+  vendorID:
+    name: Vendor Identifier
+    description: The vendor ID of the interface.
+  foreignBBMD:
+    name: BACnet/IP Broadcast Management Device Address
+    description: IP address of the BBMD.
+  foreignTTL: 
+    name: Foreign TTL
+    description: Time To Live of the packets sent for BBMD.
+  maxSegmentsAccepted:
+    name: Maximum Segments Accepted
+    description: The maximum amount of segments accepted in a message.
+  devices_setup:
+    name: Device Setup
+    description: Set up any devices you want to be treated differently. See docs for usage.
+  api_accessible:
+    name: Allow API access
+    description: Allow API access from outside of Home Assistant.
+network:
+  47808/udp: BACnet port.
+  80/tcp: Port which the integration should connect to. If you leave this empty, the integration should connect to port 8099.

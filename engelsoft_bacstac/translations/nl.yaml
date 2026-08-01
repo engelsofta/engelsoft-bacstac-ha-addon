@@ -1,0 +1,49 @@
+configuration:
+  objectName:
+    name: Device Naam
+    description: Naam van het BACnet apparaat op het netwerk.
+  address:
+    name: Interface IP
+    description: BACnet/IP host adres. "auto" probeert je LAN IP automatisch op te halen. {interface IP}/24 format.
+  objectIdentifier:
+    name: Device ID
+    description: De identifier die je apparaat mee krijgt.
+  defaultPriority:
+    name: BACnet write priority
+    description: Prioriteit van een BACnet schrijf request. 1 is hoogste en 16 is laagste prioriteit.
+  subscription_mode:
+    name: Updatemodus van de integratie
+    description: "Bepaalt hoe Engelsoft BACstac samenwerkt met Engelsoft Beacon BACnet/IP. legacy gebruikt de hieronder ingestelde apparaatregels. managed_polling ontvangt de benodigde BACnet-objecten van de integratie en pollt alleen deze objecten. managed_cov ontvangt eveneens de benodigde objecten en maakt hiervoor Change of Value-abonnementen aan; deze modus wordt aanbevolen wanneer de BACnet-apparaten COV ondersteunen."
+  managed_poll_rate:
+    name: Beheerd pollinginterval
+    description: Pollinginterval in seconden voor managed_polling. Lagere waarden zorgen voor snellere updates, maar genereren meer BACnet-verkeer.
+  loglevel:
+    name: Loggingsniveau
+    description: Het niveau waarop de gebeurtenissen gelogd worden.
+  maxApduLenghtAccepted: 
+    name: Maximum  APDU Lengte Geaccepteerd
+    description: Maximum hoeveelheid Application Layer Protocol Data Units toegestaan.
+  segmentation:
+    name: Segmentatie Ondersteund
+    description: Ondersteunde type segmentatie. "segmentedBoth" als standaard.
+  vendorID:
+    name: Vendor Identifier
+    description: Het ID van de regelaar's leverancier.
+  foreignBBMD:
+    name: BACnet/IP Broadcast Management Device Adres
+    description: IP address van het BBMD.
+  foreignTTL: 
+    name: Foreign TTL
+    description: Time To Live packets voor BBMD.
+  maxSegmentsAccepted:
+    name: Maximum Segmenten Geaccepted
+    description: De maximale hoeveelheid segmenten er in een BACnet bericht mogen zitten.
+  devices_setup:
+    name: Apparaat configuratie
+    description: Configureer apparaten die appart behandeld moeten worden. Zie documentatie over hoe deze optie gebruikt moet worden.
+  api_accessible:
+    name: Toegang tot API toestaan
+    description: Sta toe dat de API toegankelijk is buiten Home Assistant.
+network:
+  47808/udp: BACnet poort.
+  80/tcp: Poort waarmee de integration moet verbinden. Wanneer je deze poort leeg laat, moet de integration met poort 8099 verbinden.

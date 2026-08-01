@@ -1,0 +1,11 @@
+Engelsoft BACstac
+Copyright 2026 engelsofta
+
+This product includes software derived from the Bepacom BACnet/IP interface
+for Home Assistant:
+https://github.com/Bepacom-Raalte/bepacom-HA-Addons
+
+The upstream project is Copyright Bepacom B.V. and is licensed under the
+Apache License, Version 2.0. Engelsoft BACstac contains substantial changes,
+including BACnet subscription and inventory diagnostics, caching, packaging,
+branding, and WebUI modifications.

@@ -1,0 +1,50 @@
+configuration:
+  objectName:
+    name: Gerätename
+    description: Name, unter dem Engelsoft BACstac im BACnet-Netzwerk erscheint.
+  address:
+    name: Schnittstellenadresse
+    description: BACnet/IP-Adresse mit Präfix, zum Beispiel 192.168.1.10/24. Mit "auto" wird die Adresse automatisch ermittelt.
+  objectIdentifier:
+    name: Geräte-ID
+    description: Eindeutige BACnet-Gerätekennung dieser Schnittstelle.
+  defaultPriority:
+    name: BACnet-Schreibpriorität
+    description: Standardpriorität für BACnet-Schreibzugriffe. Priorität 1 ist die höchste, Priorität 16 die niedrigste.
+  subscription_mode:
+    name: Aktualisierungsmodus der Integration
+    description: "Bestimmt das Zusammenspiel von Engelsoft BACstac mit Engelsoft Beacon BACnet/IP. legacy verwendet die unten konfigurierten Geräteregeln. managed_polling übernimmt die benötigten BACnet-Objekte von der Integration und fragt nur diese zyklisch ab. managed_cov übernimmt ebenfalls die benötigten Objekte von der Integration und richtet dafür Change-of-Value-Abonnements ein; dieser Modus wird empfohlen, wenn die BACnet-Geräte COV unterstützen."
+  managed_poll_rate:
+    name: Verwaltetes Abfrageintervall
+    description: Abfrageintervall in Sekunden für managed_polling. Kleinere Werte liefern schnellere Aktualisierungen, erzeugen aber mehr BACnet-Datenverkehr.
+  loglevel:
+    name: Protokollierungsstufe
+    description: Bestimmt, wie ausführlich Meldungen im Add-on-Protokoll ausgegeben werden.
+  maxApduLenghtAccepted:
+    name: Maximale APDU-Länge
+    description: Maximale Länge einer akzeptierten BACnet-APDU.
+  segmentation:
+    name: Unterstützte Segmentierung
+    description: Segmentierungsart, die von dieser BACnet-Schnittstelle unterstützt wird.
+  vendorID:
+    name: Hersteller-ID
+    description: BACnet-Herstellerkennung der Schnittstelle.
+  foreignBBMD:
+    name: BBMD-Adresse
+    description: Adresse des BACnet Broadcast Management Device für den Foreign-Device-Betrieb.
+  foreignTTL:
+    name: Foreign-Device-Gültigkeitsdauer
+    description: Gültigkeitsdauer der BBMD-Registrierung in Sekunden.
+  maxSegmentsAccepted:
+    name: Maximale Segmentanzahl
+    description: Maximale Anzahl von Segmenten, die in einer BACnet-Nachricht akzeptiert wird.
+  devices_setup:
+    name: Gerätekonfiguration
+    description: Individuelle Abfrage- und COV-Einstellungen für erkannte BACnet-Geräte.
+  api_accessible:
+    name: Externen API-Zugriff erlauben
+    description: Erlaubt den Zugriff auf die API außerhalb von Home Assistant. Nur aktivieren, wenn dieser Zugriff benötigt und das Netzwerk vertrauenswürdig ist.
+
+network:
+  47808/udp: BACnet/IP-Port
+  80/tcp: Optionaler Port für den direkten Zugriff auf API und Weboberfläche
