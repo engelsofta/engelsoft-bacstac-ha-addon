@@ -1,4 +1,7 @@
-"""Main script for the Engelsoft BACstac Home Assistant app."""
+"""Main script for the Engelsoft BACstac Home Assistant app.
+
+Modified by engelsofta in 2026; derived from the Bepacom BACnet/IP add-on.
+"""
 
 import asyncio
 import configparser

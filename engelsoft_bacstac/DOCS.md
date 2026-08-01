@@ -1,3 +1,4 @@
+<!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 # Engelsoft BACstac
 
 Engelsoft BACstac is intended to be a bridge between the BACnet/IP network and Home Assistant.

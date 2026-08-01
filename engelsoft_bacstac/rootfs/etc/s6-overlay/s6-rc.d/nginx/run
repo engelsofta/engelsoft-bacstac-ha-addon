@@ -1,4 +1,5 @@
 #!/command/with-contenv bashio
+# Modified by engelsofta in 2026; derived from the Bepacom BACnet/IP add-on.
 
 # ==============================================================================
 # Start the NGINX service
@@ -11,4 +12,3 @@ bashio::net.wait_for 7813 localhost 300
 bashio::log.info "Running NGINX"
 
 exec nginx 
-

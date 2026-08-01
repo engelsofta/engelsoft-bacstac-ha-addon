@@ -1,3 +1,4 @@
+# Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on.
 # The Home Assistant BuildKit workflow expects the Dockerfile to be the
 # single source of truth. This base image provides a multi-platform manifest.
 FROM ghcr.io/hassio-addons/base-python:14.0.1

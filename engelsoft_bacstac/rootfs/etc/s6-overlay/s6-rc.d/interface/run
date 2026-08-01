@@ -1,4 +1,5 @@
 #!/command/with-contenv bashio
+# Modified by engelsofta in 2026; derived from the Bepacom BACnet/IP add-on.
 
 # ==============================================================================
 # Start the Interface service

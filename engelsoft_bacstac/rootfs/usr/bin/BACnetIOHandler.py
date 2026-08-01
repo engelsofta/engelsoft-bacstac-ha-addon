@@ -1,4 +1,7 @@
-"""BACnet handler classes for BACnet add-on."""
+"""BACnet handler classes for BACnet add-on.
+
+Modified by engelsofta in 2026; derived from the Bepacom BACnet/IP add-on.
+"""
 
 import asyncio
 import time

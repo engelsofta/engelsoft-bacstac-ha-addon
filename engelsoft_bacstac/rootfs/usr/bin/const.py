@@ -1,3 +1,5 @@
+"""Modified by engelsofta in 2026; derived from the Bepacom BACnet/IP add-on."""
+
 import logging
 
 from bacpypes3.basetypes import ObjectType, PropertyIdentifier

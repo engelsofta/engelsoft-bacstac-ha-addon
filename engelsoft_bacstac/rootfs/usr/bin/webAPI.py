@@ -1,4 +1,7 @@
-"""API script for BACnet add-on."""
+"""API script for BACnet add-on.
+
+Modified by engelsofta in 2026; derived from the Bepacom BACnet/IP add-on.
+"""
 
 import asyncio
 import codecs

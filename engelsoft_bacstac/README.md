@@ -1,3 +1,4 @@
+<!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 # Engelsoft BACstac
 
 _Engelsoft BACstac discovers BACnet devices on your network. In the WebUI you can browse detected devices and interact with them._

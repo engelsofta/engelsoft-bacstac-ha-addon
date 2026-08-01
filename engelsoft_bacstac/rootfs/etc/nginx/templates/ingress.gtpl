@@ -1,3 +1,4 @@
+# Modified by engelsofta in 2026; derived from the Bepacom BACnet/IP add-on.
 server {
     # listen on port
     listen 8099;

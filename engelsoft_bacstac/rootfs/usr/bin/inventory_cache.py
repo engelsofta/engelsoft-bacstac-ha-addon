@@ -1,4 +1,7 @@
-"""Safe, versioned SQLite inventory cache for BACnet discovery."""
+"""Safe, versioned SQLite inventory cache for BACnet discovery.
+
+Created by engelsofta in 2026 for the modified Engelsoft BACstac distribution.
+"""
 
 from __future__ import annotations
 
