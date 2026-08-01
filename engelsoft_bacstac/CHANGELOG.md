@@ -8,7 +8,7 @@
 - Redesigned the WebUI with the Engelsoft anthracite and gold visual style.
 - Updated the header, navigation, panels, forms and device browser across all WebUI pages.
 - Improved the responsive layout for tablets and mobile devices.
-- Focused published architecture support on amd64, aarch64 and armv7.
+- Focused published architecture support on amd64 and aarch64, matching the current Home Assistant BuildKit workflow.
 - Added complete German translations and documented the update modes used with Engelsoft Beacon BACnet/IP in all supported languages.
 
 ## Maintenance

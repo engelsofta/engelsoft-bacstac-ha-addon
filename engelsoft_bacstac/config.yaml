@@ -6,7 +6,6 @@ description: Engelsoft BACstac makes BACnet/IP devices available to Home Assista
 url: "https://github.com/engelsofta/engelsoft-bacstac-ha-addon"
 image: "ghcr.io/engelsofta/engelsoft-bacstac"
 arch:
-  - armv7
   - aarch64
   - amd64
 init: false

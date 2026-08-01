@@ -15,7 +15,6 @@ Then install **Engelsoft BACstac** from the repository.
 
 - amd64
 - aarch64
-- armv7
 
 ## License and attribution
 
