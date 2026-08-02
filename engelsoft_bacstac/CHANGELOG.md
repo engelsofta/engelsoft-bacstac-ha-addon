@@ -2,6 +2,13 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.0.2
+02/08/2026
+
+## Fixed
+- Restored the WebSocket runtime required by the WebUI and Engelsoft Beacon BACnet/IP integration.
+- Adjusted the nginx worker connection count to the container's open-file limit to avoid a misleading startup warning.
+
 # 1.0.1
 02/08/2026
 

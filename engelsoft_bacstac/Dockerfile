@@ -25,6 +25,7 @@ RUN \
     'fastapi<=0.108.0' \
     'jinja2<=3.1.4' \
     'uvicorn<=0.30.1' \
+    'websockets==12.0' \
     'python-multipart<=0.0.9' \
     'psutil<=6.0.0'
 
