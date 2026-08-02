@@ -23,7 +23,8 @@ bereit.
 - **Klare Aufgabentrennung:** BACstac kommuniziert mit BACnet; Engelsoft Beacon
   BACnet/IP kümmert sich in Home Assistant um Geräte und Entitäten.
 - **Übersichtliche Weboberfläche:** Geräte, Objekte, Abonnements und Diagnosewerte
-  lassen sich direkt über Home Assistant Ingress kontrollieren.
+  lassen sich direkt über Home Assistant Ingress kontrollieren; Dark und Light
+  Mode folgen automatisch der Home-Assistant-Darstellung.
 - **BACnet-Schreibzugriffe:** Unterstützt Schreibanforderungen mit konfigurierbarer
   BACnet-Priorität.
 - **Flexible Netzwerkanbindung:** Unterstützt den normalen BACnet/IP-Betrieb sowie

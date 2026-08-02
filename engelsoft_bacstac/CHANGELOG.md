@@ -2,6 +2,13 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.1.0
+02/08/2026
+
+## Added
+- Added a polished light theme while preserving the existing Engelsoft dark theme.
+- Added automatic theme synchronization with Home Assistant Ingress and a browser color-scheme fallback.
+
 # 1.0.2
 02/08/2026
 

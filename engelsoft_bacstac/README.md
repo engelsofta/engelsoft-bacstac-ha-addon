@@ -14,7 +14,8 @@ Home-Assistant-Integration zur Verfügung.
 - geprüfter Inventar-Cache für einen robusten Neustart
 - Lesen und Schreiben von BACnet-Werten einschließlich Schreibpriorität
 - Betrieb als normales BACnet/IP-Gerät oder als Foreign Device an einem BBMD
-- Ingress-Weboberfläche für Geräte, Objekte, Abonnements und Diagnose
+- Ingress-Weboberfläche für Geräte, Objekte, Abonnements und Diagnose mit
+  automatischem Dark und Light Mode
 - deutsche, englische und niederländische Konfigurationstexte
 
 ## Wichtig: Integration und Add-on gehören zusammen
