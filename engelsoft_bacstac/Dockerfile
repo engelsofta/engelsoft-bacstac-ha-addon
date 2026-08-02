@@ -32,6 +32,16 @@ WORKDIR /
 
 COPY rootfs /
 
+# Keep s6 service entry points executable even when the source tree was
+# prepared on a filesystem that does not preserve Unix mode bits.
+RUN chmod 0755 \
+    /etc/s6-overlay/s6-rc.d/init-interface/run \
+    /etc/s6-overlay/s6-rc.d/init-nginx/run \
+    /etc/s6-overlay/s6-rc.d/interface/run \
+    /etc/s6-overlay/s6-rc.d/interface/finish \
+    /etc/s6-overlay/s6-rc.d/nginx/run \
+    /etc/s6-overlay/s6-rc.d/nginx/finish
+
 LABEL \
     io.hass.name="${BUILD_NAME}" \
     io.hass.description="${BUILD_DESCRIPTION}" \

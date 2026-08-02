@@ -2,6 +2,13 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.0.1
+02/08/2026
+
+## Fixed
+- Restored executable permissions for all s6 service entry points so the add-on can start correctly.
+- Added a container-build safeguard that enforces the required executable permissions on every supported platform.
+
 # 1.0.0
 01/08/2026
 
