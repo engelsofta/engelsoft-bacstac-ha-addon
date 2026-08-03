@@ -408,10 +408,16 @@ th { position: sticky; top: 0; color: var(--muted); background: var(--surface-2)
 .target-status-header {
   position: sticky;
   top: 0;
-  z-index: 3;
+  z-index: 6;
+  isolation: isolate;
+  min-height: 38px;
+  margin-bottom: 7px;
   padding: 9px 12px;
-  border-bottom: 1px solid var(--line);
+  border: 1px solid var(--line);
+  border-radius: 8px;
   color: var(--muted);
+  background: var(--surface);
+  box-shadow: 0 5px 10px rgba(0, 0, 0, .14);
   font-size: 10px;
   font-weight: 800;
   letter-spacing: .04em;

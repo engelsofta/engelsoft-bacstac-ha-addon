@@ -7,6 +7,7 @@
 
 ## Fixed
 - Made the COV confirmation counter use every COV target requested by the integration as its total from the beginning, instead of growing the total alongside the throttled subscription build.
+- Added an opaque, raised sticky table header so scrolling target rows can no longer show through its labels.
 
 # 1.2.4
 03/08/2026
