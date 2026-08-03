@@ -23,6 +23,7 @@
     <span>
         <strong class="status-badge status-{{ target.state }}">{{ state_labels.get(target.state, target.state|replace('_', ' ')) }}</strong>
         {% if target.fallback_active %}<small>Grund: {{ fallback_labels.get(target.fallback_reason, target.fallback_reason) }}</small>{% endif %}
+        {% if target.cov_verification_active %}<small>Kontroll-Poll aktiv</small>{% endif %}
     </span>
     <span class="cov-cell">
         {% if target.cov_task_active %}

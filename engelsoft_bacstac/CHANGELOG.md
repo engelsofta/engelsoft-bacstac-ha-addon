@@ -8,6 +8,7 @@
 ## Improved
 - Added a live `confirmed COV / active COV` counter based on successful BACnet subscription acknowledgements to the target-status header.
 - Added a visible selection counter and disabled the manual COV removal action until at least one active subscription is selected.
+- Kept confirmed COV subscriptions active when no initial notification arrives and added control polling that falls back permanently only after a polled value changes without a matching COV notification.
 
 # 1.2.3
 03/08/2026

@@ -8,3 +8,4 @@ direkt verständlich:
 - Ein Live-Zähler zeigt bestätigte im Verhältnis zu allen aktiven COV-Subscriptions.
 - Die Aktionsleiste zeigt die Anzahl der ausgewählten COV-Subscriptions.
 - Die Schaltfläche zum Beenden bleibt deaktiviert, solange nichts ausgewählt ist.
+- Bestätigte COV-Anmeldungen ohne Initialwert bleiben aktiv. Ein Kontroll-Poll löst den dauerhaften Fallback erst aus, wenn sich der Wert ohne passende COV-Nachricht ändert.

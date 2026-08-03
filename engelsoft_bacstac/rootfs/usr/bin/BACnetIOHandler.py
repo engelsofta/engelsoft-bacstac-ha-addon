@@ -374,6 +374,10 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                 "last_value_at": None,
                 "fallback_active": False,
                 "fallback_reason": None,
+                "cov_verification_active": False,
+                "cov_verification_value_set": False,
+                "cov_verification_value": None,
+                "cov_verification_mismatches": 0,
                 "last_error": None,
             },
         )
@@ -427,6 +431,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         device_identifier: ObjectIdentifier,
         object_identifier: ObjectIdentifier,
         source: str,
+        property_value=None,
     ) -> None:
         target = self._target_key(device_identifier, object_identifier)
         status = self._ensure_target_status(target)
@@ -439,9 +444,33 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
             self._cancel_cov_fallback(target)
         elif source == "poll":
             status["last_poll_at"] = now
-            status["state"] = (
-                "polling_fallback" if status.get("fallback_active") else "polling"
-            )
+            if status.get("cov_verification_active"):
+                if not status.get("cov_verification_value_set"):
+                    status["cov_verification_value"] = property_value
+                    status["cov_verification_value_set"] = True
+                    status["state"] = "cov_waiting"
+                elif property_value != status.get("cov_verification_value"):
+                    status["cov_verification_mismatches"] = (
+                        status.get("cov_verification_mismatches", 0) + 1
+                    )
+                    if status["cov_verification_mismatches"] >= 2:
+                        self._promote_cov_verification_to_fallback(target)
+                    else:
+                        status["state"] = "cov_waiting"
+                else:
+                    status["cov_verification_mismatches"] = 0
+                    status["state"] = "cov_waiting"
+            elif status.get("fallback_active"):
+                status["state"] = "polling_fallback"
+            elif (
+                status.get("requested_mode") == "cov"
+                and status.get("subscription_confirmed_at")
+            ):
+                status["state"] = (
+                    "cov_active" if status.get("last_cov_at") else "cov_waiting"
+                )
+            else:
+                status["state"] = "polling"
 
     def _cancel_cov_fallback(self, target: tuple[str, str]) -> None:
         self.cov_fallback_tasks.pop(target, None)
@@ -460,6 +489,82 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         if status:
             status["fallback_active"] = False
             status["fallback_reason"] = None
+            status["cov_verification_active"] = False
+            status["cov_verification_value_set"] = False
+            status["cov_verification_value"] = None
+            status["cov_verification_mismatches"] = 0
+
+    def _promote_cov_verification_to_fallback(
+        self,
+        target: tuple[str, str],
+    ) -> None:
+        """Promote control polling only after it proves that COV stayed silent."""
+        status = self.target_status.get(target)
+        if not status or status.get("fallback_active"):
+            return
+        status["cov_verification_active"] = False
+        status["fallback_active"] = True
+        status["fallback_reason"] = "cov_silent"
+        status["state"] = "polling_fallback"
+        status["last_error"] = "Polled value changed without a COV notification"
+        self.managed_poll_targets.add(target)
+        self.subscription_diagnostics["cov_silence_fallbacks"] += 1
+
+        task_name_prefix = f"{target[0]},{target[1]},"
+        for subscription_task in list(self.subscription_tasks):
+            if (
+                subscription_task.get_name().startswith(task_name_prefix)
+                and not subscription_task.done()
+            ):
+                subscription_task.cancel()
+        self.managed_cov_task_names.discard(
+            f"{target[0]},{target[1]},confirmed"
+        )
+        LOGGER.warning(
+            "Polling fallback active for %s %s: value changed without COV",
+            target[0],
+            target[1],
+        )
+
+    async def _ensure_cov_verification_polling(
+        self,
+        device_identifier: ObjectIdentifier,
+        object_identifier: ObjectIdentifier,
+    ) -> None:
+        """Start a control poll without cancelling a confirmed COV subscription."""
+        target = self._target_key(device_identifier, object_identifier)
+        existing = self.cov_fallback_tasks.get(target)
+        if existing is not None and not existing.done():
+            return
+
+        status = self._ensure_target_status(target, self.subscription_mode)
+        status["cov_verification_active"] = True
+        status["cov_verification_value_set"] = False
+        status["cov_verification_value"] = None
+        status["cov_verification_mismatches"] = 0
+        status["fallback_active"] = False
+        status["fallback_reason"] = None
+        status["state"] = "cov_waiting"
+
+        device_key = target[0]
+        object_list = self.cov_fallback_object_lists.setdefault(device_key, [])
+        normalized_object = ObjectIdentifier(object_identifier)
+        if normalized_object not in object_list:
+            object_list.append(normalized_object)
+        task = self.cov_fallback_device_tasks.get(device_key)
+        if task is None or task.done():
+            task = asyncio.create_task(
+                self.poll_task(
+                    device_identifier=ObjectIdentifier(device_identifier),
+                    object_list=object_list,
+                    poll_rate=self.managed_poll_rate,
+                    property_list=[PropertyIdentifier("presentValue")],
+                ),
+                name=f"cov-control-{device_key}",
+            )
+            self.cov_fallback_device_tasks[device_key] = task
+        self.cov_fallback_tasks[target] = task
+        LOGGER.debug("COV control polling active for %s %s", target[0], target[1])
 
     async def _ensure_cov_polling_fallback(
         self,
@@ -469,10 +574,19 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
     ) -> None:
         target = self._target_key(device_identifier, object_identifier)
         existing = self.cov_fallback_tasks.get(target)
+        status = self._ensure_target_status(target, self.subscription_mode)
         if existing is not None and not existing.done():
+            if status.get("cov_verification_active"):
+                if reason == "cov_silent":
+                    self._promote_cov_verification_to_fallback(target)
+                else:
+                    status["cov_verification_active"] = False
+                    status["fallback_active"] = True
+                    status["fallback_reason"] = reason
+                    status["state"] = "polling_fallback"
+                    self.managed_poll_targets.add(target)
             return
 
-        status = self._ensure_target_status(target, self.subscription_mode)
         status["fallback_active"] = True
         status["fallback_reason"] = reason
         status["state"] = "polling_fallback"
@@ -554,11 +668,14 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                     * self.managed_cov_subscription_delay
                 )
             status = self.target_status.get(target)
-            if status and status.get("last_cov_at") is None:
-                await self._ensure_cov_polling_fallback(
+            if status and (
+                status.get("last_cov_at") is None
+                or status.get("last_cov_at", 0)
+                < status.get("subscription_confirmed_at", 0)
+            ):
+                await self._ensure_cov_verification_polling(
                     device_identifier,
                     object_identifier,
-                    "cov_silent",
                 )
         except asyncio.CancelledError:
             return
@@ -1574,6 +1691,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                 device_identifier,
                 object_identifier,
                 update_source,
+                property_value,
             )
 
     async def read_multiple_device_props(self, apdu) -> bool:
