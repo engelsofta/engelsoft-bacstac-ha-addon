@@ -1,58 +1,85 @@
 # Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on.
 configuration:
   objectName:
-    name: Gerätename
+    name: BACnet · Gerätename
     description: Name, unter dem Engelsoft BACstac im BACnet-Netzwerk erscheint.
   address:
-    name: Schnittstellenadresse
+    name: BACnet · Schnittstellenadresse
     description: BACnet/IP-Adresse mit Präfix, zum Beispiel 192.168.1.10/24. Mit "auto" wird die Adresse automatisch ermittelt.
   objectIdentifier:
-    name: Geräte-ID
+    name: BACnet · Geräte-ID
     description: Eindeutige BACnet-Gerätekennung dieser Schnittstelle.
   defaultPriority:
-    name: BACnet-Schreibpriorität
-    description: Standardpriorität für BACnet-Schreibzugriffe. Priorität 1 ist die höchste, Priorität 16 die niedrigste.
+    name: Schreiben · Standardpriorität (Fallback)
+    description: Wird verwendet, wenn Integration oder API keine eigene Schreibpriorität mitsendet. Priorität 1 ist die höchste, Priorität 16 die niedrigste. Empfohlen sind 15 oder 16.
   subscription_mode:
-    name: Aktualisierungsmodus der Integration
+    name: Aktualisierung · Betriebsart
     description: "Bestimmt das Zusammenspiel mit Engelsoft Beacon BACnet/IP. integration_controlled übernimmt COV, Polling oder Deaktiviert pro Ziel aus der Integration und wendet weiterhin alle Schutzregeln an. managed_polling fragt alle benötigten Objekte sicher ab. managed_cov bevorzugt COV. legacy verwendet ausschließlich die unten konfigurierten Geräteregeln."
   managed_poll_rate:
-    name: Verwaltetes Abfrageintervall
+    name: Aktualisierung · Polling-Intervall
     description: Abfrageintervall in Sekunden für managed_polling. Kleinere Werte liefern schnellere Aktualisierungen, erzeugen aber mehr BACnet-Datenverkehr.
   managed_cov_subscription_delay:
-    name: Abstand zwischen COV-Anmeldungen
+    name: Aktualisierung · Abstand zwischen COV-Anmeldungen
     description: Wartezeit in Sekunden zwischen zwei COV-Anmeldungen. Schützt empfindliche BACnet-Geräte vor zu vielen Anforderungen in kurzer Folge.
   managed_cov_fallback_timeout:
-    name: COV-Fallback-Zeit
-    description: Zeit in Sekunden, die nach einer bestätigten COV-Anmeldung auf die erste Wertmeldung gewartet wird. Danach übernimmt automatisch Polling.
+    name: Aktualisierung · COV-Prüfzeit
+    description: Zeit bis zum Start eines schonenden Kontroll-Polls, wenn nach einer bestätigten COV-Anmeldung keine Meldung eintrifft. Erst nach nachgewiesener Wertänderung ohne COV wird dauerhaft auf Polling gewechselt.
+  deviceID:
+    name: Geräte-Regel · BACnet-Gerät
+    description: BACnet-Gerätekennung im Format device:123. Der Wert all gilt als Standardregel für alle Geräte.
+  CoV_lifetime:
+    name: Geräte-Regel · COV-Laufzeit
+    description: Gültigkeitsdauer einer COV-Anmeldung in Sekunden. Das Add-on erneuert sie automatisch.
   CoV_limit:
-    name: Maximale COV-Abonnements pro Gerät
+    name: Geräte-Regel · Maximale COV-Anmeldungen
     description: Obergrenze gleichzeitig angelegter COV-Abonnements je BACnet-Gerät. Weitere Objekte werden automatisch gepollt. 0 deaktiviert COV für das Gerät.
+  CoV_list:
+    name: Geräte-Regel · COV-Objekte (Legacy)
+    description: Objektkennungen für automatische COV-Anmeldungen im Legacy-Modus. Im Integrationsmodus wird diese Liste nicht benötigt.
+  quick_poll_rate:
+    name: Geräte-Regel · Schnelles Polling-Intervall (Legacy)
+    description: Abfrageintervall in Sekunden für die Liste mit schnellem Polling im Legacy-Modus.
+  quick_poll_list:
+    name: Geräte-Regel · Objekte mit schnellem Polling (Legacy)
+    description: Objektkennungen, die im Legacy-Modus schnell abgefragt werden.
+  slow_poll_rate:
+    name: Geräte-Regel · Langsames Polling-Intervall (Legacy)
+    description: Abfrageintervall in Sekunden für die Liste mit langsamem Polling im Legacy-Modus.
+  slow_poll_list:
+    name: Geräte-Regel · Objekte mit langsamem Polling (Legacy)
+    description: Objektkennungen für langsames Polling im Legacy-Modus. all erfasst alle übrigen Objekte.
+  resub_on_iam:
+    name: Geräte-Regel · COV nach I-Am erneuern
+    description: Prüft nach einer erneuten I-Am-Meldung des Geräts die COV-Anmeldungen und stellt fehlende wieder her.
+  reread_on_iam:
+    name: Geräte-Regel · Objektliste nach I-Am prüfen
+    description: Prüft nach einer I-Am-Meldung, ob sich die Objektliste des Geräts verändert hat.
   loglevel:
-    name: Protokollierungsstufe
+    name: Diagnose · Protokollierungsstufe
     description: Bestimmt, wie ausführlich Meldungen im Add-on-Protokoll ausgegeben werden.
   maxApduLenghtAccepted:
-    name: Maximale APDU-Länge
+    name: Erweitert · Maximale APDU-Länge
     description: Maximale Länge einer akzeptierten BACnet-APDU.
   segmentation:
-    name: Unterstützte Segmentierung
+    name: Erweitert · Unterstützte Segmentierung
     description: Segmentierungsart, die von dieser BACnet-Schnittstelle unterstützt wird.
   vendorID:
-    name: Hersteller-ID
+    name: Erweitert · Hersteller-ID
     description: BACnet-Herstellerkennung der Schnittstelle.
   foreignBBMD:
-    name: BBMD-Adresse
+    name: Erweitert · BBMD-Adresse
     description: Adresse des BACnet Broadcast Management Device für den Foreign-Device-Betrieb.
   foreignTTL:
-    name: Foreign-Device-Gültigkeitsdauer
+    name: Erweitert · Foreign-Device-Gültigkeitsdauer
     description: Gültigkeitsdauer der BBMD-Registrierung in Sekunden.
   maxSegmentsAccepted:
-    name: Maximale Segmentanzahl
+    name: Erweitert · Maximale Segmentanzahl
     description: Maximale Anzahl von Segmenten, die in einer BACnet-Nachricht akzeptiert wird.
   devices_setup:
-    name: Gerätekonfiguration
-    description: Individuelle Abfrage- und COV-Einstellungen für erkannte BACnet-Geräte.
+    name: Geräte · Individuelle Regeln
+    description: Gerätespezifisches COV-Limit sowie erweiterte Legacy-Regeln. Für normale Installationen genügt meist der vorhandene Eintrag all.
   api_accessible:
-    name: Externen API-Zugriff erlauben
+    name: Zugriff · Externe API erlauben
     description: Erlaubt den Zugriff auf die API außerhalb von Home Assistant. Nur aktivieren, wenn dieser Zugriff benötigt und das Netzwerk vertrauenswürdig ist.
 
 network:

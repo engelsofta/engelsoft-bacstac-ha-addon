@@ -1,58 +1,85 @@
 # Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on.
 configuration:
   objectName:
-    name: Device Naam
+    name: BACnet · Apparaatnaam
     description: Naam van het BACnet apparaat op het netwerk.
   address:
-    name: Interface IP
+    name: BACnet · Interfaceadres
     description: BACnet/IP host adres. "auto" probeert je LAN IP automatisch op te halen. {interface IP}/24 format.
   objectIdentifier:
-    name: Device ID
+    name: BACnet · Apparaat-ID
     description: De identifier die je apparaat mee krijgt.
   defaultPriority:
-    name: BACnet write priority
-    description: Prioriteit van een BACnet schrijf request. 1 is hoogste en 16 is laagste prioriteit.
+    name: Schrijven · Standaardprioriteit (fallback)
+    description: Wordt gebruikt wanneer de integratie of API geen schrijfprioriteit opgeeft. Prioriteit 1 is het hoogst en 16 het laagst. 15 of 16 wordt aanbevolen.
   subscription_mode:
-    name: Updatemodus van de integratie
+    name: Updates · Bedrijfsmodus
     description: "Bepaalt de samenwerking met Engelsoft Beacon BACnet/IP. integration_controlled volgt per doel de keuze COV, polling of uitgeschakeld en behoudt alle veiligheidslimieten. managed_polling pollt ieder benodigd doel veilig. managed_cov geeft voorkeur aan COV. legacy gebruikt alleen de regels hieronder."
   managed_poll_rate:
-    name: Beheerd pollinginterval
+    name: Updates · Pollinginterval
     description: Pollinginterval in seconden voor managed_polling. Lagere waarden zorgen voor snellere updates, maar genereren meer BACnet-verkeer.
   managed_cov_subscription_delay:
-    name: Pauze tussen COV-abonnementen
+    name: Updates · Pauze tussen COV-abonnementen
     description: Wachttijd in seconden tussen COV-aanvragen om gevoelige BACnet-apparaten tegen aanvraagpieken te beschermen.
   managed_cov_fallback_timeout:
-    name: COV-fallbacktijd
-    description: Aantal seconden dat na een bevestigd COV-abonnement op de eerste waardemelding wordt gewacht voordat polling automatisch overneemt.
+    name: Updates · COV-controleduur
+    description: Tijd voordat een rustige controlepoll start als een bevestigd COV-abonnement niets meldt. Permanente pollingfallback volgt pas na een bewezen waardewijziging zonder COV.
+  deviceID:
+    name: Apparaatregel · BACnet-apparaat
+    description: BACnet apparaat-ID in het formaat device:123. De waarde all is de standaardregel voor alle apparaten.
+  CoV_lifetime:
+    name: Apparaatregel · COV-looptijd
+    description: Geldigheidsduur van een COV-abonnement in seconden. De add-on vernieuwt dit automatisch.
   CoV_limit:
-    name: Maximum COV-abonnementen per apparaat
+    name: Apparaatregel · Maximum COV-abonnementen
     description: Maximaal aantal gelijktijdige COV-abonnementen per BACnet-apparaat. Overige objecten worden automatisch gepolld. 0 schakelt COV voor dit apparaat uit.
+  CoV_list:
+    name: Apparaatregel · COV-objecten (legacy)
+    description: Object-ID's voor automatische COV-abonnementen in legacy-modus. Niet nodig in integratiegestuurde modus.
+  quick_poll_rate:
+    name: Apparaatregel · Snel pollinginterval (legacy)
+    description: Pollinginterval in seconden voor de snelle lijst in legacy-modus.
+  quick_poll_list:
+    name: Apparaatregel · Snel gepollde objecten (legacy)
+    description: Object-ID's die in legacy-modus snel worden gepolld.
+  slow_poll_rate:
+    name: Apparaatregel · Langzaam pollinginterval (legacy)
+    description: Pollinginterval in seconden voor de langzame lijst in legacy-modus.
+  slow_poll_list:
+    name: Apparaatregel · Langzaam gepollde objecten (legacy)
+    description: Object-ID's voor langzaam pollen in legacy-modus. all omvat alle overige objecten.
+  resub_on_iam:
+    name: Apparaatregel · COV herstellen na I-Am
+    description: Controleert COV-abonnementen na een I-Am-bericht en herstelt ontbrekende abonnementen.
+  reread_on_iam:
+    name: Apparaatregel · Objecten controleren na I-Am
+    description: Controleert na een I-Am-bericht of de objectlijst is gewijzigd.
   loglevel:
-    name: Loggingsniveau
+    name: Diagnose · Logniveau
     description: Het niveau waarop de gebeurtenissen gelogd worden.
   maxApduLenghtAccepted: 
-    name: Maximum  APDU Lengte Geaccepteerd
+    name: Geavanceerd · Maximale APDU-lengte
     description: Maximum hoeveelheid Application Layer Protocol Data Units toegestaan.
   segmentation:
-    name: Segmentatie Ondersteund
+    name: Geavanceerd · Ondersteunde segmentatie
     description: Ondersteunde type segmentatie. "segmentedBoth" als standaard.
   vendorID:
-    name: Vendor Identifier
+    name: Geavanceerd · Vendor-ID
     description: Het ID van de regelaar's leverancier.
   foreignBBMD:
-    name: BACnet/IP Broadcast Management Device Adres
+    name: Geavanceerd · BBMD-adres
     description: IP address van het BBMD.
   foreignTTL: 
-    name: Foreign TTL
+    name: Geavanceerd · Foreign-device-looptijd
     description: Time To Live packets voor BBMD.
   maxSegmentsAccepted:
-    name: Maximum Segmenten Geaccepted
+    name: Geavanceerd · Maximaal aantal segmenten
     description: De maximale hoeveelheid segmenten er in een BACnet bericht mogen zitten.
   devices_setup:
-    name: Apparaat configuratie
-    description: Configureer apparaten die appart behandeld moeten worden. Zie documentatie over hoe deze optie gebruikt moet worden.
+    name: Apparaten · Individuele regels
+    description: COV-limieten per apparaat en geavanceerde legacy-regels. Meestal volstaat de bestaande all-regel.
   api_accessible:
-    name: Toegang tot API toestaan
+    name: Toegang · Externe API toestaan
     description: Sta toe dat de API toegankelijk is buiten Home Assistant.
 network:
   47808/udp: BACnet poort.

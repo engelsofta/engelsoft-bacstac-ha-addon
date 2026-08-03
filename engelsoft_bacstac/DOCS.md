@@ -104,11 +104,11 @@ Example add-on configuration:
 objectName: Engelsoft BACstac
 address: auto
 objectIdentifier: 420
-defaultPriority: 15
 subscription_mode: managed_polling
 managed_poll_rate: 10
 managed_cov_subscription_delay: 1
 managed_cov_fallback_timeout: 30
+defaultPriority: 15
 devices_setup:
   - deviceID: all
     CoV_lifetime: 600
@@ -150,11 +150,10 @@ If you have a subnet of 255.255.0.0 then your CIDR notation would be /16
 ### Option: `objectIdentifier` Device ID
 The Object Identifier that this device will get. This will be seen by other devices on the BACnet network. **Make sure it's unique in your network!**
 
-### Option: `defaultPriority` BACnet write priority
-The priority your write requests get. 
-Low number means high priority. 
-High number means low priority. 
-Recommended to keep at 15 or 16 unless you know what a higher priority can do to your BACnet devices.
+### Option: `defaultPriority` BACnet write priority fallback
+This priority is used only when the integration or API does not provide one.
+Low numbers have higher priority. Keep the fallback at 15 or 16 unless you
+understand how command prioritization affects the target BACnet controller.
 
 ### Options: safe update handling
 
@@ -162,7 +161,7 @@ Recommended to keep at 15 or 16 unless you know what a higher priority can do to
 - `subscription_mode`: `managed_polling` is the safe default. Engelsoft Beacon BACnet/IP sends the required targets to the add-on and BACstac polls only those targets. `managed_cov` uses COV where possible and automatically polls excess, failed or silent COV targets. `legacy` uses only the static `devices_setup` rules.
 - `managed_poll_rate`: Polling interval in seconds for integration-managed targets.
 - `managed_cov_subscription_delay`: Delay in seconds between COV subscription requests. A value of 1 avoids sending a burst of requests to sensitive controllers.
-- `managed_cov_fallback_timeout`: Time in seconds after a confirmed COV subscription to wait for its first value. If no value arrives, the target is polled automatically.
+- `managed_cov_fallback_timeout`: Time in seconds after a confirmed COV subscription before control polling begins. The COV subscription remains active and permanent polling fallback happens only after repeated polls prove a value change without a matching COV notification.
 
 The **Subscriptions** page shows the state of every managed target, when its COV subscription was confirmed, the last COV notification, the last poll and the age of its current value.
 

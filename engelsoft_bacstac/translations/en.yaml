@@ -1,58 +1,85 @@
 # Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on.
 configuration:
   objectName:
-    name: Device Name
+    name: BACnet · Device name
     description: The name of the interface in the BACnet network.
   address:
-    name: Interface IP
+    name: BACnet · Interface address
     description: BACnet/IP host address. "auto" tries to automatically get your IP. x.x.x.x/24 format.
   objectIdentifier:
-    name: Device ID
+    name: BACnet · Device ID
     description: The identifier (number) of the interface.
   defaultPriority:
-    name: BACnet write priority
-    description: Priority of the BACnet write request. Priority 1 is highest, priority 16 is lowest it can go.
+    name: Writing · Default priority (fallback)
+    description: Used when the integration or API does not provide a write priority. Priority 1 is highest and priority 16 is lowest. Values 15 or 16 are recommended.
   subscription_mode:
-    name: Integration update mode
+    name: Updates · Operating mode
     description: "Controls how BACstac works with Engelsoft Beacon BACnet/IP. integration_controlled follows each target's COV, polling or disabled choice while retaining all safety limits. managed_polling safely polls every required target. managed_cov prefers COV. legacy uses only the rules below."
   managed_poll_rate:
-    name: Managed polling interval
+    name: Updates · Polling interval
     description: Polling interval in seconds when managed_polling is selected. Lower values update faster but generate more BACnet traffic.
   managed_cov_subscription_delay:
-    name: Delay between COV subscriptions
+    name: Updates · Delay between COV subscriptions
     description: Delay in seconds between COV subscription requests to protect sensitive BACnet devices from request bursts.
   managed_cov_fallback_timeout:
-    name: COV fallback timeout
-    description: Seconds to wait for the first value notification after a confirmed COV subscription before polling takes over automatically.
+    name: Updates · COV verification time
+    description: Time before a gentle control poll starts when a confirmed COV subscription sends no notification. Permanent polling fallback occurs only after a value change without COV is proven.
+  deviceID:
+    name: Device rule · BACnet device
+    description: BACnet device identifier in device:123 format. The value all defines the default rule for every device.
+  CoV_lifetime:
+    name: Device rule · COV lifetime
+    description: Lifetime of a COV subscription in seconds. The add-on renews it automatically.
   CoV_limit:
-    name: Maximum COV subscriptions per device
+    name: Device rule · Maximum COV subscriptions
     description: Maximum number of simultaneous COV subscriptions for each BACnet device. Additional objects are polled automatically. Set to 0 to disable COV for that device.
+  CoV_list:
+    name: Device rule · COV objects (legacy)
+    description: Object identifiers subscribed automatically in legacy mode. This list is not needed in integration-controlled mode.
+  quick_poll_rate:
+    name: Device rule · Fast polling interval (legacy)
+    description: Polling interval in seconds for the fast polling list in legacy mode.
+  quick_poll_list:
+    name: Device rule · Fast polling objects (legacy)
+    description: Object identifiers polled quickly in legacy mode.
+  slow_poll_rate:
+    name: Device rule · Slow polling interval (legacy)
+    description: Polling interval in seconds for the slow polling list in legacy mode.
+  slow_poll_list:
+    name: Device rule · Slow polling objects (legacy)
+    description: Object identifiers polled slowly in legacy mode. all includes every remaining object.
+  resub_on_iam:
+    name: Device rule · Restore COV after I-Am
+    description: Checks COV subscriptions after a new I-Am message and restores missing subscriptions.
+  reread_on_iam:
+    name: Device rule · Check objects after I-Am
+    description: Checks whether the device object list changed after an I-Am message.
   loglevel:
-    name: Level of Logging
+    name: Diagnostics · Log level
     description: The severity of log messages being displayed.
   maxApduLenghtAccepted: 
-    name: Maximum  APDU Length Accepted
+    name: Advanced · Maximum accepted APDU length
     description: Maximum amount of Application Layer Protocol Data Units allowed.
   segmentation:
-    name: Segmentation Supported
+    name: Advanced · Supported segmentation
     description: Supported segmentation type of the interface.
   vendorID:
-    name: Vendor Identifier
+    name: Advanced · Vendor identifier
     description: The vendor ID of the interface.
   foreignBBMD:
-    name: BACnet/IP Broadcast Management Device Address
+    name: Advanced · BBMD address
     description: IP address of the BBMD.
   foreignTTL: 
-    name: Foreign TTL
+    name: Advanced · Foreign-device lifetime
     description: Time To Live of the packets sent for BBMD.
   maxSegmentsAccepted:
-    name: Maximum Segments Accepted
+    name: Advanced · Maximum accepted segments
     description: The maximum amount of segments accepted in a message.
   devices_setup:
-    name: Device Setup
-    description: Set up any devices you want to be treated differently. See docs for usage.
+    name: Devices · Individual rules
+    description: Per-device COV limits and advanced legacy rules. Most installations only need the existing all entry.
   api_accessible:
-    name: Allow API access
+    name: Access · Allow external API
     description: Allow API access from outside of Home Assistant.
 network:
   47808/udp: BACnet port.

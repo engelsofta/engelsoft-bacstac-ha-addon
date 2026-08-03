@@ -2,6 +2,14 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.2.7
+03/08/2026
+
+## Improved
+- Reordered the add-on configuration into a clearer basic BACnet, update handling, writing, device rules, access, advanced and diagnostics flow without changing any stored option keys.
+- Added concise category prefixes and complete German, English and Dutch labels and help text for all nested device-rule options.
+- Clarified that the write priority is a fallback and updated the COV verification description to match the safer control-poll behavior.
+
 # 1.2.6
 03/08/2026
 
