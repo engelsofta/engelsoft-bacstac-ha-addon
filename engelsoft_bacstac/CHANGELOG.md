@@ -2,6 +2,13 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.2.3
+03/08/2026
+
+## Fixed
+- Prevented the update-control summary from overflowing behind the target and action panels.
+- Kept navigation and mode summary on one clean row on wide screens and added controlled wrapping with automatic row height on narrower layouts.
+
 # 1.2.2
 03/08/2026
 
