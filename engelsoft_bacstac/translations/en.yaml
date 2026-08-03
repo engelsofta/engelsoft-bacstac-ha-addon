@@ -14,7 +14,7 @@ configuration:
     description: Priority of the BACnet write request. Priority 1 is highest, priority 16 is lowest it can go.
   subscription_mode:
     name: Integration update mode
-    description: "Controls how BACstac works with Engelsoft Beacon BACnet/IP. managed_polling is the safe default and polls only objects requested by the integration. managed_cov creates limited COV subscriptions with automatic polling fallback. legacy uses only the device rules configured below."
+    description: "Controls how BACstac works with Engelsoft Beacon BACnet/IP. integration_controlled follows each target's COV, polling or disabled choice while retaining all safety limits. managed_polling safely polls every required target. managed_cov prefers COV. legacy uses only the rules below."
   managed_poll_rate:
     name: Managed polling interval
     description: Polling interval in seconds when managed_polling is selected. Lower values update faster but generate more BACnet traffic.

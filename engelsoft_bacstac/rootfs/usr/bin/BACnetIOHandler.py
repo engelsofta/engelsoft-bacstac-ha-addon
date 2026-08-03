@@ -131,6 +131,8 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         self.managed_cov_task_names: set[str] = set()
         self.managed_cov_reconcile_task: asyncio.Task | None = None
         self.managed_targets: set[tuple[str, str]] = set()
+        self.managed_disabled_targets: set[tuple[str, str]] = set()
+        self.managed_requested_modes: dict[tuple[str, str], str] = {}
         self.pending_managed_updates: set[tuple[str, str]] = set()
         self.target_status: dict[tuple[str, str], dict[str, Any]] = {}
         self.cov_fallback_tasks: dict[tuple[str, str], asyncio.Task] = {}
@@ -472,7 +474,8 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                 object_list=[ObjectIdentifier(object_identifier)],
                 poll_rate=(
                     self.managed_poll_rate
-                    if self.subscription_mode in {"managed_polling", "managed_cov"}
+                    if self.subscription_mode
+                    in {"integration_controlled", "managed_polling", "managed_cov"}
                     else max(
                         30,
                         int(
@@ -549,14 +552,14 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
 
         config = self.addon_device_config[index]
 
-        if self.subscription_mode not in {"managed_polling", "managed_cov"} and config.get("quick_poll_list", []):
+        if self.subscription_mode not in {"integration_controlled", "managed_polling", "managed_cov"} and config.get("quick_poll_list", []):
             await self.create_poll_task(
                 device_identifier=device_identifier,
                 object_list=config.get("quick_poll_list"),
                 poll_rate=config.get("quick_poll_rate", 30),
             )
 
-        if self.subscription_mode in {"managed_polling", "managed_cov"}:
+        if self.subscription_mode in {"integration_controlled", "managed_polling", "managed_cov"}:
             object_list = []
         elif "all" in config.get("slow_poll_list", []):
             object_list = self.bacnet_device_dict[f"device:{device_identifier[1]}"][
@@ -578,7 +581,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                 poll_rate=config.get("slow_poll_rate", 600),
             )
 
-        if self.subscription_mode in {"managed_polling", "managed_cov"}:
+        if self.subscription_mode in {"integration_controlled", "managed_polling", "managed_cov"}:
             LOGGER.info("Managed subscription mode active; skipping configured subscriptions")
         elif "all" in config.get("CoV_list", []):
             object_list = self.bacnet_device_dict[f"device:{device_identifier[1]}"][
@@ -635,14 +638,14 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
 
         config = self.addon_device_config[index]
 
-        if self.subscription_mode not in {"managed_polling", "managed_cov"} and config.get("quick_poll_list", []):
+        if self.subscription_mode not in {"integration_controlled", "managed_polling", "managed_cov"} and config.get("quick_poll_list", []):
             await self.create_poll_task(
                 device_identifier=device_identifier,
                 object_list=config.get("quick_poll_list"),
                 poll_rate=config.get("quick_poll_rate", 30),
             )
 
-        if self.subscription_mode in {"managed_polling", "managed_cov"}:
+        if self.subscription_mode in {"integration_controlled", "managed_polling", "managed_cov"}:
             object_list = []
         elif "all" in config.get("slow_poll_list", []):
             object_list = self.bacnet_device_dict[f"device:{device_identifier[1]}"][
@@ -666,7 +669,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                 ),
             )
 
-        if self.subscription_mode in {"managed_polling", "managed_cov"}:
+        if self.subscription_mode in {"integration_controlled", "managed_polling", "managed_cov"}:
             LOGGER.info("Managed subscription mode active; skipping configured subscriptions")
         elif "all" in config.get("CoV_list", []):
             object_list = self.bacnet_device_dict[f"device:{device_identifier[1]}"][
@@ -796,161 +799,182 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         except Exception as err:
             LOGGER.error(err)
 
-    async def replace_managed_targets(
-        self, targets: list[tuple[ObjectIdentifier, ObjectIdentifier]]
-    ) -> dict:
-        """Replace the integration-managed polling or COV targets."""
-        if self.subscription_mode not in {"managed_polling", "managed_cov"}:
+    async def replace_managed_targets(self, targets: list[tuple]) -> dict:
+        """Apply integration targets while retaining BACnet safety guardrails."""
+        managed_modes = {
+            "integration_controlled",
+            "managed_polling",
+            "managed_cov",
+        }
+        if self.subscription_mode not in managed_modes:
             return {"accepted": False, "mode": self.subscription_mode, "targets": 0}
 
-        grouped: dict[ObjectIdentifier, list[ObjectIdentifier]] = {}
-        normalized: set[tuple[str, str]] = set()
-        for device_identifier, object_identifier in targets:
-            device_identifier = ObjectIdentifier(device_identifier)
-            object_identifier = ObjectIdentifier(object_identifier)
-            grouped.setdefault(device_identifier, []).append(object_identifier)
-            normalized.add(
-                (
-                    f"{device_identifier[0].attr}:{device_identifier[1]}",
-                    f"{object_identifier[0].attr}:{object_identifier[1]}",
-                )
-            )
+        requested_modes: dict[tuple[str, str], str] = {}
+        identifiers: dict[
+            tuple[str, str], tuple[ObjectIdentifier, ObjectIdentifier]
+        ] = {}
+        for entry in targets:
+            device_identifier = ObjectIdentifier(entry[0])
+            object_identifier = ObjectIdentifier(entry[1])
+            requested_mode = str(entry[2]).lower() if len(entry) > 2 else "polling"
+            if self.subscription_mode == "managed_polling":
+                requested_mode = "polling"
+            elif self.subscription_mode == "managed_cov":
+                requested_mode = "cov"
+            if requested_mode not in {"cov", "polling", "disabled"}:
+                requested_mode = "polling"
+            target = self._target_key(device_identifier, object_identifier)
+            requested_modes[target] = requested_mode
+            identifiers[target] = (device_identifier, object_identifier)
 
-        removed_targets = set(self.target_status) - normalized
+        all_requested = set(requested_modes)
+        disabled_targets = {
+            target for target, mode in requested_modes.items() if mode == "disabled"
+        }
+        active_targets = all_requested - disabled_targets
+        removed_targets = set(self.target_status) - all_requested
         for target in removed_targets:
             self._cancel_target_runtime(target)
             self.target_status.pop(target, None)
-        for target in normalized:
-            self._ensure_target_status(target, self.subscription_mode)
 
-        if self.subscription_mode == "managed_cov":
-            cov_grouped: dict[ObjectIdentifier, list[ObjectIdentifier]] = {}
-            overflow_targets: list[tuple[ObjectIdentifier, ObjectIdentifier]] = []
-            for device_identifier, object_list in grouped.items():
-                unique_objects = list(dict.fromkeys(object_list))
-                cov_limit = self._cov_limit_for_device(device_identifier)
-                cov_candidates = []
-                retained_fallbacks = []
-                for object_identifier in unique_objects:
-                    target = self._target_key(device_identifier, object_identifier)
-                    status = self.target_status.get(target, {})
-                    if status.get("fallback_active") and status.get(
-                        "fallback_reason"
-                    ) in {"cov_silent", "cov_failed"}:
-                        retained_fallbacks.append(object_identifier)
-                    else:
-                        cov_candidates.append(object_identifier)
-                cov_grouped[device_identifier] = cov_candidates[:cov_limit]
-                overflow_targets.extend(
-                    (device_identifier, object_identifier)
-                    for object_identifier in (
-                        retained_fallbacks + cov_candidates[cov_limit:]
-                    )
+        for target, requested_mode in requested_modes.items():
+            status = self._ensure_target_status(target, requested_mode)
+            if requested_mode == "disabled":
+                self._cancel_target_runtime(target)
+                status["state"] = "disabled"
+
+        cov_requested: dict[ObjectIdentifier, list[ObjectIdentifier]] = {}
+        poll_requested: dict[ObjectIdentifier, list[ObjectIdentifier]] = {}
+        for target in active_targets:
+            device_identifier, object_identifier = identifiers[target]
+            if requested_modes[target] == "cov":
+                cov_requested.setdefault(device_identifier, []).append(
+                    object_identifier
                 )
-            desired_names = {
-                f"{self.identifier_to_string(device_identifier)},{self.identifier_to_string(object_identifier)},confirmed"
-                for device_identifier, object_list in cov_grouped.items()
-                for object_identifier in object_list
-            }
-            overflow_keys = {
-                self._target_key(device_identifier, object_identifier)
-                for device_identifier, object_identifier in overflow_targets
-            }
-            active_names = {
-                task.get_name()
-                for task in self.subscription_tasks
-                if not task.done() and not task.cancelling()
-            }
-            active_fallbacks = {
-                target
-                for target, task in self.cov_fallback_tasks.items()
-                if not task.done()
-            }
-            if (
-                normalized == self.managed_targets
-                and desired_names <= active_names
-                and overflow_keys <= active_fallbacks
-            ):
-                return {
-                    "accepted": True,
-                    "mode": self.subscription_mode,
-                    "strategy": "cov",
-                    "targets": len(normalized),
-                    "cov_targets": len(desired_names),
-                    "polling_fallback_targets": len(overflow_keys),
-                    "devices": len(grouped),
-                    "unchanged": True,
-                }
+            else:
+                poll_requested.setdefault(device_identifier, []).append(
+                    object_identifier
+                )
 
-            previous_names = self.managed_cov_task_names
-            self.managed_targets = normalized
-            self.pending_managed_updates.clear()
-            self.subscription_diagnostics["managed_target_updates"] += 1
-            self.managed_cov_task_names = desired_names
-            self.managed_poll_targets = set(overflow_keys)
-            for task in self.managed_poll_tasks.values():
-                task.cancel()
-            self.managed_poll_tasks = {}
-
-            if (
-                self.managed_cov_reconcile_task is not None
-                and not self.managed_cov_reconcile_task.done()
-            ):
-                self.managed_cov_reconcile_task.cancel()
-            self.managed_cov_reconcile_task = asyncio.create_task(
-                self._reconcile_managed_cov_targets(
-                    cov_grouped,
-                    desired_names,
-                    previous_names,
-                    overflow_targets,
-                ),
-                name="managed-cov-reconcile",
+        cov_grouped: dict[ObjectIdentifier, list[ObjectIdentifier]] = {}
+        overflow_targets: list[tuple[ObjectIdentifier, ObjectIdentifier]] = []
+        for device_identifier, object_list in cov_requested.items():
+            cov_limit = self._cov_limit_for_device(device_identifier)
+            cov_candidates: list[ObjectIdentifier] = []
+            retained_fallbacks: list[ObjectIdentifier] = []
+            for object_identifier in dict.fromkeys(object_list):
+                target = self._target_key(device_identifier, object_identifier)
+                status = self.target_status.get(target, {})
+                if status.get("fallback_active") and status.get(
+                    "fallback_reason"
+                ) in {"cov_silent", "cov_failed"}:
+                    retained_fallbacks.append(object_identifier)
+                else:
+                    cov_candidates.append(object_identifier)
+            cov_grouped[device_identifier] = cov_candidates[:cov_limit]
+            overflow_targets.extend(
+                (device_identifier, object_identifier)
+                for object_identifier in retained_fallbacks
+                + cov_candidates[cov_limit:]
             )
-            return {
-                "accepted": True,
-                "mode": self.subscription_mode,
-                "strategy": "cov",
-                "targets": len(normalized),
-                "cov_targets": len(desired_names),
-                "polling_fallback_targets": len(overflow_keys),
-                "devices": len(grouped),
-                "reconcile_scheduled": True,
-            }
 
-        self.managed_targets = normalized
+        desired_names = {
+            f"{self.identifier_to_string(device_identifier)},{self.identifier_to_string(object_identifier)},confirmed"
+            for device_identifier, object_list in cov_grouped.items()
+            for object_identifier in object_list
+        }
+        explicit_poll_targets = {
+            self._target_key(device_identifier, object_identifier)
+            for device_identifier, object_list in poll_requested.items()
+            for object_identifier in object_list
+        }
+        overflow_keys = {
+            self._target_key(device_identifier, object_identifier)
+            for device_identifier, object_identifier in overflow_targets
+        }
+        active_names = {
+            task.get_name()
+            for task in self.subscription_tasks
+            if not task.done() and not task.cancelling()
+        }
+        active_fallbacks = {
+            target
+            for target, task in self.cov_fallback_tasks.items()
+            if not task.done()
+        }
+        polling_tasks_ready = all(
+            task is not None and not task.done()
+            for task in self.managed_poll_tasks.values()
+        ) and (not poll_requested or bool(self.managed_poll_tasks))
+        if (
+            requested_modes == self.managed_requested_modes
+            and desired_names <= active_names
+            and overflow_keys <= active_fallbacks
+            and polling_tasks_ready
+        ):
+            return self._managed_target_response(unchanged=True)
+
+        previous_names = self.managed_cov_task_names
+        self.managed_targets = active_targets
+        self.managed_disabled_targets = disabled_targets
+        self.managed_requested_modes = requested_modes
         self.pending_managed_updates.clear()
         self.subscription_diagnostics["managed_target_updates"] += 1
-        for target in normalized:
-            self._cancel_cov_fallback(target)
-            status = self._ensure_target_status(target, "managed_polling")
-            status["state"] = "polling"
+        self.managed_cov_task_names = desired_names
 
-        new_tasks: dict[str, asyncio.Task] = {}
-        for device_identifier, object_list in grouped.items():
-            new_tasks[str(device_identifier)] = asyncio.create_task(
+        old_poll_tasks = self.managed_poll_tasks
+        self.managed_poll_tasks = {}
+        for device_identifier, object_list in poll_requested.items():
+            task_key = self.identifier_to_string(device_identifier)
+            self.managed_poll_tasks[task_key] = asyncio.create_task(
                 self.poll_task(
                     device_identifier=device_identifier,
                     object_list=list(dict.fromkeys(object_list)),
                     poll_rate=self.managed_poll_rate,
                     property_list=[PropertyIdentifier("presentValue")],
                 ),
-                name=f"managed-poll-{device_identifier}",
+                name=f"managed-poll-{task_key}",
             )
-
-        old_tasks = self.managed_poll_tasks
-        self.managed_poll_tasks = new_tasks
-        self.managed_poll_targets = normalized
-
-        for task in old_tasks.values():
+        for task in old_poll_tasks.values():
             task.cancel()
+        for target in explicit_poll_targets:
+            self._cancel_cov_fallback(target)
+            status = self._ensure_target_status(target, "polling")
+            status["state"] = "polling"
+        self.managed_poll_targets = explicit_poll_targets | overflow_keys
 
+        if (
+            self.managed_cov_reconcile_task is not None
+            and not self.managed_cov_reconcile_task.done()
+        ):
+            self.managed_cov_reconcile_task.cancel()
+        self.managed_cov_reconcile_task = asyncio.create_task(
+            self._reconcile_managed_cov_targets(
+                cov_grouped,
+                desired_names,
+                previous_names,
+                overflow_targets,
+            ),
+            name="managed-cov-reconcile",
+        )
+        return self._managed_target_response(reconcile_scheduled=True)
+
+    def _managed_target_response(self, **extra) -> dict:
+        """Return a stable summary for integrations and the WebUI."""
         return {
             "accepted": True,
             "mode": self.subscription_mode,
-            "strategy": "polling",
-            "targets": len(normalized),
-            "devices": len(grouped),
+            "strategy": (
+                "integration" if self.subscription_mode == "integration_controlled"
+                else "cov" if self.subscription_mode == "managed_cov"
+                else "polling"
+            ),
+            "targets": len(self.managed_targets),
+            "cov_targets": len(self.managed_cov_task_names),
+            "polling_targets": len(self.managed_poll_targets),
+            "disabled_targets": len(self.managed_disabled_targets),
             "poll_rate": self.managed_poll_rate,
+            **extra,
         }
 
     def consume_managed_delta(self) -> dict:
@@ -1190,11 +1214,20 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
 
     async def handle_cov_check(self, device_identifier) -> None:
 
-        if self.subscription_mode == "managed_cov":
+        if self.subscription_mode in {"managed_cov", "integration_controlled"}:
             device_key = self.identifier_to_string(device_identifier)
             config = self.get_config_from_addon_config(device_identifier)
             for target_device, target_object in self.managed_targets:
                 if target_device != device_key:
+                    continue
+                if self.managed_requested_modes.get(
+                    (target_device, target_object)
+                ) != "cov":
+                    continue
+                status = self.target_status.get((target_device, target_object), {})
+                if status.get("fallback_active") and status.get(
+                    "fallback_reason"
+                ) in {"cov_silent", "cov_failed"}:
                     continue
                 await self.create_subscription_task(
                     device_identifier=device_identifier,
@@ -1466,7 +1499,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                 object_key, set()
             ).add(property_key)
 
-        if self.subscription_mode == "managed_cov":
+        if self.subscription_mode in {"managed_cov", "integration_controlled"}:
             target = (
                 f"{device_identifier[0].attr}:{device_identifier[1]}",
                 f"{object_identifier[0].attr}:{object_identifier[1]}",

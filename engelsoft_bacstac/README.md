@@ -16,6 +16,8 @@ Anmeldung Werte aus, wechselt das betroffene Objekt automatisch auf Polling.
 - automatische Erkennung von BACnet/IP-Geräten und Objekten
 - begrenzte, gedrosselte COV-Abonnements mit automatischem Polling-Fallback
 - Zielstatus mit COV-Bestätigung, letzter COV-Nachricht, letztem Poll und Wertealter
+- integrationsgesteuerter Hybridmodus für COV, Polling oder deaktivierte Ziele
+- live aktualisierte Statusleiste mit Modus und aktueller Zielverteilung
 - geprüfter Inventar-Cache für einen robusten Neustart
 - Lesen und Schreiben von BACnet-Werten einschließlich Schreibpriorität
 - Betrieb als normales BACnet/IP-Gerät oder als Foreign Device an einem BBMD

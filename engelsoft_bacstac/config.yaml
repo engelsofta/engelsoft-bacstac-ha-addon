@@ -51,7 +51,7 @@ schema:
   address: str
   objectIdentifier: int
   defaultPriority: int(1,16)
-  subscription_mode: list(legacy|managed_polling|managed_cov)
+  subscription_mode: list(integration_controlled|managed_polling|managed_cov|legacy)
   managed_poll_rate: int(3,300)
   managed_cov_subscription_delay: int(0,30)
   managed_cov_fallback_timeout: int(10,600)

@@ -7,6 +7,10 @@ empfindlichen COV-Implementierung.
 
 ## Sicherheits- und Stabilitätskorrekturen
 
+- Neuer Modus `integration_controlled`: Die Integration kann je Ziel COV,
+  Polling oder deaktiviert vorgeben; BACstac behält Limits und Fallbacks bei.
+- Eine neue Statusleiste zeigt auf jeder WebUI-Seite Steuerungsmodus sowie die
+  Anzahl der COV-, Polling-, Fallback- und deaktivierten Ziele.
 - Neue Installationen verwenden standardmäßig `managed_polling`.
 - Die bisherige Standard-COV-Liste `all` ist nun leer.
 - Pro Gerät gelten standardmäßig maximal 20 gleichzeitige COV-Abonnements;

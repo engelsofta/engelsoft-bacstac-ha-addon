@@ -159,6 +159,25 @@ ul { margin: 0; padding: 0; list-style: none; }
   background: var(--active-gradient);
   box-shadow: inset 0 1px rgba(255,255,255,.14);
 }
+.mode-summary {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--gold);
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+.mode-summary small { display: block; color: var(--muted); font-size: 8px; font-weight: 800; letter-spacing: .12em; }
+.mode-summary strong { display: block; margin-top: 2px; color: var(--gold-light); font-size: 13px; }
+.mode-metrics { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.mode-metrics span { padding: 5px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: 10px; background: var(--surface); }
+.mode-metrics b { color: var(--text); }
+.mode-metrics .mode-warning { border-color: #b27a35; color: #d8a457; }
 
 .div4, .div5 {
   min-width: 0;
@@ -336,6 +355,8 @@ th { position: sticky; top: 0; color: var(--muted); background: var(--surface-2)
   .div1 h1 { font-size: 21px; }
   .brand-mark { width: 42px; height: 42px; flex-basis: 42px; }
   .div2 a { gap: 5px; padding: 7px 5px; font-size: 11px; }
+  .mode-summary { align-items: flex-start; flex-direction: column; gap: 7px; }
+  .mode-metrics { justify-content: flex-start; }
   .div4 > label:first-child { align-items: flex-start; flex-direction: column; gap: 2px; }
   .selectable-label a { display: block; width: 100%; margin: 2px 0; }
 }

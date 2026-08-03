@@ -21,6 +21,9 @@ bereit.
   ausbleibenden Meldungen automatisch auf Polling zurück.
 - **Transparenter Zielstatus:** Zeigt je Objekt die bestätigte COV-Anmeldung,
   letzte COV-Nachricht, letzte Abfrage und das Alter des aktuellen Wertes.
+- **Integrationsgesteuerter Hybridmodus:** Übernimmt COV, Polling oder
+  deaktiviert pro Ziel aus Engelsoft Beacon BACnet/IP, ohne COV-Limits,
+  Drosselung und automatische Fallbacks aus der Hand zu geben.
 - **Robuster Neustart:** Ein versionierter, geprüfter Inventar-Cache stellt den
   zuletzt vollständig erkannten Objektbestand nach einem Neustart frühzeitig bereit.
 - **Klare Aufgabentrennung:** BACstac kommuniziert mit BACnet; Engelsoft Beacon

@@ -14,7 +14,7 @@ configuration:
     description: Standardpriorität für BACnet-Schreibzugriffe. Priorität 1 ist die höchste, Priorität 16 die niedrigste.
   subscription_mode:
     name: Aktualisierungsmodus der Integration
-    description: "Bestimmt das Zusammenspiel mit Engelsoft Beacon BACnet/IP. managed_polling ist der sichere Standard und fragt nur die von der Integration benötigten Objekte ab. managed_cov richtet dafür COV-Abonnements mit Limit und Polling-Fallback ein. legacy verwendet ausschließlich die unten konfigurierten Geräteregeln."
+    description: "Bestimmt das Zusammenspiel mit Engelsoft Beacon BACnet/IP. integration_controlled übernimmt COV, Polling oder Deaktiviert pro Ziel aus der Integration und wendet weiterhin alle Schutzregeln an. managed_polling fragt alle benötigten Objekte sicher ab. managed_cov bevorzugt COV. legacy verwendet ausschließlich die unten konfigurierten Geräteregeln."
   managed_poll_rate:
     name: Verwaltetes Abfrageintervall
     description: Abfrageintervall in Sekunden für managed_polling. Kleinere Werte liefern schnellere Aktualisierungen, erzeugen aber mehr BACnet-Datenverkehr.

@@ -4,6 +4,7 @@
 <head>
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<script src="{{ url_for('static', path='/js/theme.js') }}?v=1.0.0"></script>
+	<script defer src="{{ url_for('static', path='/js/mode-status.js') }}?v=1.2.0"></script>
 	<link href="{{ url_for('static', path='/css/styles.css') }}?v=2.1.0-theme" rel="stylesheet">
 	<title>Engelsoft BACstac – EDE</title>
 </head>
@@ -21,6 +22,14 @@
 			<a href="./webapp" title="Main page where you can see all devices, objects and values."><span>▦</span> Geräte</a>
 			<a href="./subscriptions" title="Page where you can see all subscriptions."><span>◈</span> Subscriptions</a>
 			<a class="active" href="./ede" title="Page where you can see manage EDE files."><span>▤</span> EDE</a>
+			<div class="mode-summary mode-{{ sidebar.mode }}">
+				<div><small>AKTUALISIERUNGSSTEUERUNG</small><strong data-mode-label>{{ sidebar.label }}</strong></div>
+				<div class="mode-metrics">
+					<span data-mode-metric="targets"><b>{{ sidebar.targets }}</b> Ziele</span><span data-mode-metric="cov"><b>{{ sidebar.cov }}</b> COV</span><span data-mode-metric="polling"><b>{{ sidebar.polling }}</b> Polling</span>
+					<span data-mode-metric="fallback" class="mode-warning" {% if not sidebar.fallback %}hidden{% endif %}><b>{{ sidebar.fallback }}</b> Fallback</span>
+					<span data-mode-metric="disabled" {% if not sidebar.disabled %}hidden{% endif %}><b>{{ sidebar.disabled }}</b> aus</span>
+				</div>
+			</div>
 		</div>
 		<div class="div4">
 			<label>EDE files:</label>

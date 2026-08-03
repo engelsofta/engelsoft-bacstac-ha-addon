@@ -91,7 +91,8 @@ def websocket_snapshot() -> dict:
 
     application = bacnet_application
     if (
-        getattr(application, "subscription_mode", None) != "managed_cov"
+        getattr(application, "subscription_mode", None)
+        not in {"managed_cov", "integration_controlled"}
         or not getattr(application, "managed_targets", None)
     ):
         return source
@@ -192,6 +193,29 @@ app.mount(
 templates = Jinja2Templates(directory=f"{path_str}/templates")
 
 
+def sidebar_status() -> dict:
+    """Build the compact transport summary shown on every WebUI page."""
+    application = bacnet_application
+    mode = getattr(application, "subscription_mode", "starting")
+    labels = {
+        "integration_controlled": "Integrationsgesteuert",
+        "managed_polling": "Verwaltetes Polling",
+        "managed_cov": "COV bevorzugt",
+        "legacy": "Legacy / manuell",
+        "starting": "Wird gestartet",
+    }
+    statuses = getattr(application, "target_status", {}).values()
+    return {
+        "mode": mode,
+        "label": labels.get(mode, mode),
+        "targets": len(getattr(application, "managed_targets", [])),
+        "cov": len(getattr(application, "managed_cov_task_names", [])),
+        "polling": len(getattr(application, "managed_poll_targets", [])),
+        "disabled": len(getattr(application, "managed_disabled_targets", [])),
+        "fallback": sum(bool(item.get("fallback_active")) for item in statuses),
+    }
+
+
 @app.get("/webapp", response_class=HTMLResponse, tags=["Webpages"])
 async def webapp(request: Request):
     """Index and main page of the add-on."""
@@ -203,7 +227,12 @@ async def webapp(request: Request):
     dict_to_send = jsonable_encoder(dict_to_send)
 
     return templates.TemplateResponse(
-        "index.html", {"request": request, "bacnet_devices": dict_to_send}
+        "index.html",
+        {
+            "request": request,
+            "bacnet_devices": dict_to_send,
+            "sidebar": sidebar_status(),
+        },
     )
 
 
@@ -218,6 +247,7 @@ async def subscriptions(request: Request):
         {
             "request": request,
             "subs": sub_list,
+            "sidebar": sidebar_status(),
             "targets": (
                 bacnet_application.target_status_snapshot()
                 if bacnet_application is not None
@@ -232,7 +262,7 @@ async def ede(request: Request):
     """Page to see EDE files uploaded."""
     return templates.TemplateResponse(
         "ede.html",
-        {"request": request, "files": EDE_files},
+        {"request": request, "files": EDE_files, "sidebar": sidebar_status()},
     )
 
 
@@ -277,6 +307,15 @@ async def get_subscription_diagnostics():
         "managed_targets": len(getattr(application, "managed_targets", [])),
         "managed_poll_targets": len(getattr(application, "managed_poll_targets", [])),
         "managed_cov_targets": len(getattr(application, "managed_cov_task_names", [])),
+        "managed_disabled_targets": len(
+            getattr(application, "managed_disabled_targets", [])
+        ),
+        "managed_requested_modes": {
+            f"{device_id}/{object_id}": mode
+            for (device_id, object_id), mode in getattr(
+                application, "managed_requested_modes", {}
+            ).items()
+        },
         "target_status": (
             application.target_status_snapshot() if application is not None else []
         ),
@@ -300,7 +339,7 @@ async def get_subscription_diagnostics():
 
 @app.post("/apiv1/managed/targets", tags=["apiv1"])
 async def set_managed_targets(request: Request):
-    """Replace the integration-managed polling target list."""
+    """Replace integration-managed targets and their requested transports."""
     diagnostic_counters["managed_target_requests"] += 1
     application = bacnet_application
     if application is None:
@@ -313,12 +352,27 @@ async def set_managed_targets(request: Request):
         for target in raw_targets:
             device_id = str(target["device_id"])
             object_id = str(target["object_id"])
+            update_mode = str(
+                target.get("update_mode", target.get("mode", "polling"))
+            ).lower()
+            update_mode = {
+                "push": "cov",
+                "subscribe": "cov",
+                "managed_cov": "cov",
+                "poll": "polling",
+                "managed_polling": "polling",
+                "off": "disabled",
+                "none": "disabled",
+            }.get(update_mode, update_mode)
+            if update_mode not in {"cov", "polling", "disabled"}:
+                raise ValueError(f"unsupported update_mode: {update_mode}")
             if ":" not in device_id and "," not in device_id:
                 device_id = f"device:{device_id}"
             targets.append(
                 (
                     ObjectIdentifier(device_id),
                     ObjectIdentifier(object_id),
+                    update_mode,
                 )
             )
     except (KeyError, TypeError, ValueError) as err:
@@ -736,7 +790,8 @@ async def websocket_writer(websocket: WebSocket):
                 events.val_updated_event.clear()
                 application = bacnet_application
                 managed_delta = (
-                    getattr(application, "subscription_mode", None) == "managed_cov"
+                    getattr(application, "subscription_mode", None)
+                    in {"managed_cov", "integration_controlled"}
                 )
                 if managed_delta:
                     dict_to_send = application.consume_managed_delta()

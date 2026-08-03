@@ -158,12 +158,27 @@ Recommended to keep at 15 or 16 unless you know what a higher priority can do to
 
 ### Options: safe update handling
 
+- `integration_controlled`: The integration selects `cov`, `polling` or `disabled` for every target. BACstac still enforces the per-device COV limit, subscription pacing and automatic polling fallback. Targets without an explicit mode use polling for backward compatibility.
 - `subscription_mode`: `managed_polling` is the safe default. Engelsoft Beacon BACnet/IP sends the required targets to the add-on and BACstac polls only those targets. `managed_cov` uses COV where possible and automatically polls excess, failed or silent COV targets. `legacy` uses only the static `devices_setup` rules.
 - `managed_poll_rate`: Polling interval in seconds for integration-managed targets.
 - `managed_cov_subscription_delay`: Delay in seconds between COV subscription requests. A value of 1 avoids sending a burst of requests to sensitive controllers.
 - `managed_cov_fallback_timeout`: Time in seconds after a confirmed COV subscription to wait for its first value. If no value arrives, the target is polled automatically.
 
 The **Subscriptions** page shows the state of every managed target, when its COV subscription was confirmed, the last COV notification, the last poll and the age of its current value.
+
+In `integration_controlled` mode the integration can send an `update_mode` with
+each target to `POST /apiv1/managed/targets`:
+
+```json
+{"targets": [
+  {"device_id": "device:21", "object_id": "analogInput:403", "update_mode": "cov"},
+  {"device_id": "device:21", "object_id": "analogInput:404", "update_mode": "polling"},
+  {"device_id": "device:21", "object_id": "analogInput:405", "update_mode": "disabled"}
+]}
+```
+
+The WebUI status strip makes the active control mode and the current COV,
+polling, fallback and disabled target counts visible on every page.
 
 ### Option: `devices_setup` Device Setup
 

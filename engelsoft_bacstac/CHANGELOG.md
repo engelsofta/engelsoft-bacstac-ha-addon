@@ -6,6 +6,8 @@
 03/08/2026
 
 ## Security and reliability
+- Added an integration-controlled hybrid mode that accepts COV, polling or disabled per target while retaining all BACnet safety limits.
+- Added a prominent WebUI status strip showing the active control mode and COV, polling, fallback and disabled target counts.
 - Changed the fresh-install default from legacy subscriptions to managed polling.
 - Changed the legacy default COV list from `all` to an empty list.
 - Added a configurable per-device COV limit, defaulting to 20; excess targets automatically use polling.
