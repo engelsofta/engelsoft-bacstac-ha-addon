@@ -120,6 +120,7 @@
   }
 
   // Five seconds keeps the large status table current without creating needless UI load.
+  apply();
   updateSummaries();
   window.setInterval(refreshRows, 5000);
 })();

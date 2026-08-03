@@ -2,6 +2,12 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.2.8
+03/08/2026
+
+## Fixed
+- Applied the preselected Active target filter immediately on page load and hid inactive rows in the initial server response, preventing the complete list from flashing before the first live refresh.
+
 # 1.2.7
 03/08/2026
 
