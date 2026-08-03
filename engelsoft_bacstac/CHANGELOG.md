@@ -2,6 +2,12 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.2.6
+03/08/2026
+
+## Fixed
+- Made the confirmed-COV counter reuse the same numeric state that renders and sorts the visible COV column, preventing confirmed rows from remaining at zero in Home Assistant WebViews.
+
 # 1.2.5
 03/08/2026
 
