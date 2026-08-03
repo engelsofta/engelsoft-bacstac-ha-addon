@@ -9,3 +9,8 @@ Der COV-Fortschritt ist jetzt eindeutig und stabil:
   einmal bestätigt wurde;
 - Erneuerungen, temporärer Neuaufbau oder Fallback lassen den bestätigten
   Fortschritt nicht mehr rückwärts zählen.
+
+Der Abstand zwischen COV-Anmeldungen wird nun in Millisekunden eingestellt.
+`1000 ms` entsprechen dem bisherigen Standard von einer Sekunde; beispielsweise
+ermöglichen `250 ms` vier Anmeldeversuche pro Sekunde. Bestehende Sekundenwerte
+bleiben als Fallback kompatibel.

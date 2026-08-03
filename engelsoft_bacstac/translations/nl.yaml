@@ -18,9 +18,12 @@ configuration:
   managed_poll_rate:
     name: Updates · Pollinginterval
     description: Pollinginterval in seconden voor managed_polling. Lagere waarden zorgen voor snellere updates, maar genereren meer BACnet-verkeer.
-  managed_cov_subscription_delay:
+  managed_cov_subscription_delay_ms:
     name: Updates · Pauze tussen COV-abonnementen
-    description: Wachttijd in seconden tussen COV-aanvragen om gevoelige BACnet-apparaten tegen aanvraagpieken te beschermen.
+    description: Wachttijd in milliseconden tussen COV-aanvragen. 1000 ms is één seconde. Lagere waarden bouwen sneller op, maar belasten gevoelige BACnet-apparaten meer.
+  managed_cov_subscription_delay:
+    name: Compatibiliteit · Oude COV-pauze in seconden
+    description: Verouderde secondewaarde van bestaande installaties. Wordt alleen gebruikt als de nieuwe millisecondewaarde ontbreekt.
   managed_cov_fallback_timeout:
     name: Updates · COV-controleduur
     description: Tijd voordat een rustige controlepoll start als een bevestigd COV-abonnement niets meldt. Permanente pollingfallback volgt pas na een bewezen waardewijziging zonder COV.

@@ -121,7 +121,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         self.subscription_mode = subscription_mode
         self.managed_poll_rate = max(3, int(managed_poll_rate))
         self.managed_cov_subscription_delay = max(
-            0, int(managed_cov_subscription_delay)
+            0.0, float(managed_cov_subscription_delay)
         )
         self.managed_cov_fallback_timeout = max(
             10, int(managed_cov_fallback_timeout)

@@ -106,7 +106,7 @@ address: auto
 objectIdentifier: 420
 subscription_mode: managed_polling
 managed_poll_rate: 10
-managed_cov_subscription_delay: 1
+managed_cov_subscription_delay_ms: 1000
 managed_cov_fallback_timeout: 30
 defaultPriority: 15
 devices_setup:
@@ -160,7 +160,7 @@ understand how command prioritization affects the target BACnet controller.
 - `integration_controlled`: The integration selects `cov`, `polling` or `disabled` for every target. BACstac still enforces the per-device COV limit, subscription pacing and automatic polling fallback. Targets without an explicit mode use polling for backward compatibility.
 - `subscription_mode`: `managed_polling` is the safe default. Engelsoft Beacon BACnet/IP sends the required targets to the add-on and BACstac polls only those targets. `managed_cov` uses COV where possible and automatically polls excess, failed or silent COV targets. `legacy` uses only the static `devices_setup` rules.
 - `managed_poll_rate`: Polling interval in seconds for integration-managed targets.
-- `managed_cov_subscription_delay`: Delay in seconds between COV subscription requests. A value of 1 avoids sending a burst of requests to sensitive controllers.
+- `managed_cov_subscription_delay_ms`: Delay in milliseconds between COV subscription requests. `1000` equals one second; for example, `250` allows four subscription attempts per second. Existing installations that only contain `managed_cov_subscription_delay` continue to interpret that legacy value as seconds.
 - `managed_cov_fallback_timeout`: Time in seconds after a confirmed COV subscription before control polling begins. The COV subscription remains active and permanent polling fallback happens only after repeated polls prove a value change without a matching COV notification.
 
 The **Subscriptions** page shows the state of every managed target, when its COV subscription was confirmed, the last COV notification, the last poll and the age of its current value.

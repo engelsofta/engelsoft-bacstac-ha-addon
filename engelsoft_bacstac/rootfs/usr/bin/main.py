@@ -391,8 +391,10 @@ async def main():
         addon_device_config=options.get("devices_setup"),
         subscription_mode=options.get("subscription_mode", "managed_polling"),
         managed_poll_rate=options.get("managed_poll_rate", 10),
-        managed_cov_subscription_delay=options.get(
-            "managed_cov_subscription_delay", 1
+        managed_cov_subscription_delay=(
+            max(0, int(options["managed_cov_subscription_delay_ms"])) / 1000
+            if options.get("managed_cov_subscription_delay_ms") is not None
+            else max(0, int(options.get("managed_cov_subscription_delay", 1)))
         ),
         managed_cov_fallback_timeout=options.get(
             "managed_cov_fallback_timeout", 30

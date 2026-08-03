@@ -28,7 +28,7 @@ options:
   objectIdentifier: 420
   subscription_mode: managed_polling
   managed_poll_rate: 10
-  managed_cov_subscription_delay: 1
+  managed_cov_subscription_delay_ms: 1000
   managed_cov_fallback_timeout: 30
   defaultPriority: 15
   devices_setup:
@@ -52,7 +52,7 @@ schema:
   objectIdentifier: int
   subscription_mode: list(integration_controlled|managed_polling|managed_cov|legacy)
   managed_poll_rate: int(3,300)
-  managed_cov_subscription_delay: int(0,30)
+  managed_cov_subscription_delay_ms: int(0,30000)?
   managed_cov_fallback_timeout: int(10,600)
   defaultPriority: int(1,16)
   devices_setup:
@@ -76,4 +76,5 @@ schema:
   maxApduLenghtAccepted: int?
   segmentation: list(segmentedBoth|segmentedTransmit|segmentedReceive|noSegmentation)?
   maxSegmentsAccepted: int?
+  managed_cov_subscription_delay: int(0,30)?
   loglevel: list(DEBUG|INFO|WARNING|ERROR|CRITICAL|)

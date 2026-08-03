@@ -18,9 +18,12 @@ configuration:
   managed_poll_rate:
     name: Updates · Polling interval
     description: Polling interval in seconds when managed_polling is selected. Lower values update faster but generate more BACnet traffic.
-  managed_cov_subscription_delay:
+  managed_cov_subscription_delay_ms:
     name: Updates · Delay between COV subscriptions
-    description: Delay in seconds between COV subscription requests to protect sensitive BACnet devices from request bursts.
+    description: Delay in milliseconds between COV subscription requests. 1000 ms equals one second. Lower values build faster but can put more load on sensitive BACnet devices.
+  managed_cov_subscription_delay:
+    name: Compatibility · Legacy COV delay in seconds
+    description: Deprecated seconds value from existing installations. Used only when the new millisecond value is absent.
   managed_cov_fallback_timeout:
     name: Updates · COV verification time
     description: Time before a gentle control poll starts when a confirmed COV subscription sends no notification. Permanent polling fallback occurs only after a value change without COV is proven.
