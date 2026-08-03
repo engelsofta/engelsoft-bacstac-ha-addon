@@ -2106,6 +2106,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         target = self._target_key(device_identifier, object_identifier)
         status = self._ensure_target_status(target, self.subscription_mode)
         status["state"] = "subscribing"
+        status["subscription_confirmed_at"] = None
         status["last_error"] = None
 
         unsubscribe_cov_request = None

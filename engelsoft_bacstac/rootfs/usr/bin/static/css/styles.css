@@ -214,6 +214,18 @@ ul { margin: 0; padding: 0; list-style: none; }
   font-weight: 750;
 }
 .div4 > label:first-child small { color: var(--muted); font-size: 10px; font-weight: 500; }
+.cov-confirmation-summary {
+  margin-left: auto;
+  padding: 6px 10px;
+  border: 1px solid rgba(112,157,85,.45);
+  border-radius: 999px;
+  color: #91b878;
+  background: rgba(112,157,85,.12);
+  font-size: 10px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+.cov-confirmation-summary b { color: inherit; font-size: 11px; }
 .div5::before {
   content: "Aktion";
   display: block;
@@ -228,6 +240,16 @@ ul { margin: 0; padding: 0; list-style: none; }
 }
 
 .div5 form { display: grid; gap: 7px; }
+.cov-selection-summary {
+  margin-top: 7px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  background: var(--surface-2);
+  font-size: 11px;
+}
+.cov-selection-summary b { color: var(--gold-light); }
 .div5 form > br { display: none; }
 .div5 label { margin-top: 5px; color: var(--muted); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
 input[type="text"], input[type="file"], select {
@@ -260,6 +282,7 @@ input:focus, select:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var
 }
 .button:hover, input[type="button"]:hover { filter: brightness(1.1); transform: translateY(-1px); }
 .button:active, input[type="button"]:active { transform: translateY(0); }
+input[type="button"]:disabled { cursor: not-allowed; filter: grayscale(.7); opacity: .45; transform: none; }
 input[type="button"] + input[type="button"] { border-color: var(--line); color: var(--secondary-text); background: var(--surface-3); }
 
 .device-tree > label {

@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="{{ url_for('static', path='/js/theme.js') }}?v=1.0.0"></script>
     <script defer src="{{ url_for('static', path='/js/mode-status.js') }}?v=1.2.0"></script>
-    <script defer src="{{ url_for('static', path='/js/target-status.js') }}?v=1.2.3-live"></script>
-    <link href="{{ url_for('static', path='/css/styles.css') }}?v=1.2.3-ui" rel="stylesheet">
+    <script defer src="{{ url_for('static', path='/js/target-status.js') }}?v=1.2.4-summary"></script>
+    <link href="{{ url_for('static', path='/css/styles.css') }}?v=1.2.4-summary" rel="stylesheet">
     <title>Engelsoft BACstac – Subscriptions</title>
 </head>
 <body>
@@ -36,6 +36,7 @@
             <label class="status-title">
                 <span>Zielstatus <b class="target-count">{{ targets|length }}</b></span>
                 <small>COV-Bestätigung, letzter Transport und Wertealter</small>
+                <span class="cov-confirmation-summary">COV bestätigt: <b id="cov-confirmed-count">–</b></span>
             </label>
             <div class="target-toolbar">
                 <label class="target-search">
@@ -85,7 +86,8 @@
                 <input type="text" id="lifetime" name="lifetime" title="Lifetime of subscription in seconds. Unconfirmed as well as lifetime 0 to unsubscribe">
                 <br>
                 <input type="button" value="Subscribe" onclick="submitForm()" title="Send Subscribe Request.">
-                <input type="button" value="Remove Subscription" onclick="removeSubscription()" title="End Subscription Task.">
+                <span class="cov-selection-summary"><b id="selected-cov-count">0</b> COV ausgewählt</span>
+                <input id="remove-subscription-button" type="button" value="Ausgewählte COV beenden" onclick="removeSubscription()" title="Ausgewählte COV-Subscriptions beenden." disabled>
             </form>
         </div>
     </div>

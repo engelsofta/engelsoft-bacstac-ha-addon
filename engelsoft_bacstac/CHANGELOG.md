@@ -2,6 +2,13 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.2.4
+03/08/2026
+
+## Improved
+- Added a live `confirmed COV / active COV` counter based on successful BACnet subscription acknowledgements to the target-status header.
+- Added a visible selection counter and disabled the manual COV removal action until at least one active subscription is selected.
+
 # 1.2.3
 03/08/2026
 

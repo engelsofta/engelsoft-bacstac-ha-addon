@@ -6,7 +6,19 @@
   const buttons = Array.from(document.querySelectorAll("[data-target-filter]"));
   const sortButtons = Array.from(document.querySelectorAll("[data-sort]"));
   const rowsContainer = document.getElementById("target-status-rows");
+  const confirmedCount = document.getElementById("cov-confirmed-count");
+  const selectedCount = document.getElementById("selected-cov-count");
+  const removeButton = document.getElementById("remove-subscription-button");
   if (!input || !count) return;
+
+  const updateSummaries = () => {
+    const activeCov = rows.filter((row) => Number(row.dataset.sortCov || 0) > 0);
+    const confirmedCov = activeCov.filter((row) => row.dataset.covConfirmed === "true");
+    const selectedCov = document.querySelectorAll("[data-subscription-checkbox]:checked").length;
+    if (confirmedCount) confirmedCount.textContent = `${confirmedCov.length} von ${activeCov.length}`;
+    if (selectedCount) selectedCount.textContent = String(selectedCov);
+    if (removeButton) removeButton.disabled = selectedCov === 0;
+  };
 
   let selected = "active";
   const apply = () => {
@@ -29,6 +41,9 @@
   };
 
   input.addEventListener("input", apply);
+  document.addEventListener("change", (event) => {
+    if (event.target.matches("[data-subscription-checkbox]")) updateSummaries();
+  });
   buttons.forEach((button) => {
     button.addEventListener("click", () => {
       selected = button.dataset.targetFilter || "all";
@@ -93,6 +108,7 @@
       });
       sortRows(sortKey, sortDirection);
       apply();
+      updateSummaries();
     } catch (_error) {
       // Retry quietly on the next interval while the add-on is busy or restarting.
     } finally {
@@ -101,5 +117,6 @@
   }
 
   // Five seconds keeps the large status table current without creating needless UI load.
+  updateSummaries();
   window.setInterval(refreshRows, 5000);
 })();
