@@ -2,6 +2,15 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.2.1
+03/08/2026
+
+## Fixed
+- Replaced one WebSocket writer per client with a single safe broadcaster, preventing duplicate and concurrent sends when the WebUI and integration are connected together.
+- Grouped COV polling fallbacks into one polling worker per BACnet device instead of creating one infinite task per object.
+- Made legacy subscribe and unsubscribe API calls return an immediate explicit acknowledgement and reflected them in integration-controlled diagnostics.
+- Reduced repeated per-object COV-limit fallback messages to debug level after the first device warning.
+
 # 1.2.0
 03/08/2026
 

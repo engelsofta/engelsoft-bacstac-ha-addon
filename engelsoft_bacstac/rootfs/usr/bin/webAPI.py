@@ -35,6 +35,7 @@ from pydantic import parse_obj_as
 bacnet_device_dict: dict
 bacnet_application: Application | None = None
 activeSockets: list = []
+websocket_broadcast_task: asyncio.Task | None = None
 EDE_files: list = []
 sub_list: list = []
 
@@ -667,6 +668,7 @@ async def subscribe_objectid(
         )
 
         await events.sub_queue.put(sub_tuple)
+        return {"accepted": True, "queued": True}
 
     except Exception as err:
         LOGGER.error(f"{err} on subscribe from API POST request")
@@ -688,6 +690,7 @@ async def unsubscribe_objectid(deviceid: str, objectid: str):
         )
 
         await events.unsub_queue.put(sub_tuple)
+        return {"accepted": True, "queued": True}
 
     except Exception as err:
         LOGGER.error(f"{err} on subscribe from API DELETE request")
@@ -701,10 +704,17 @@ async def websocket_endpoint(websocket: WebSocket):
 
     LOGGER.debug(f"Accepted websocket: {websocket.url}")
 
-    # Start a task to write data to the websocket
-    write_task = asyncio.create_task(websocket_writer(websocket))
-
     activeSockets.append(websocket)
+    data_to_send = jsonable_encoder(websocket_snapshot())
+    if is_valid_json(data_to_send):
+        await websocket.send_json(data_to_send)
+        diagnostic_counters["websocket_initial_snapshots"] += 1
+
+    global websocket_broadcast_task
+    if websocket_broadcast_task is None or websocket_broadcast_task.done():
+        websocket_broadcast_task = asyncio.create_task(
+            websocket_writer(), name="websocket-broadcaster"
+        )
 
     while True:
         try:
@@ -757,32 +767,25 @@ async def websocket_endpoint(websocket: WebSocket):
                     LOGGER.warning(f"message: {message} is not processed")
 
         except (RuntimeError, asyncio.CancelledError) as err:
-            write_task.cancel()
-            activeSockets.remove(websocket)
+            if websocket in activeSockets:
+                activeSockets.remove(websocket)
             LOGGER.error(f"Disconnected with Exception... {err}")
             return
         except WebSocketDisconnect as err:
-            write_task.cancel()
-            activeSockets.remove(websocket)
+            if websocket in activeSockets:
+                activeSockets.remove(websocket)
             LOGGER.info(f"Disconnected websocket: {err}")
             return
         except Exception as err:
-            write_task.cancel()
-            activeSockets.remove(websocket)
+            if websocket in activeSockets:
+                activeSockets.remove(websocket)
             LOGGER.error(f"Disconnected with Exception {err}")
+            return
 
 
-async def websocket_writer(websocket: WebSocket):
-    """Writer task for when a websocket is opened"""
+async def websocket_writer():
+    """Broadcast updates once to every connected WebSocket client."""
     try:
-        global bacnet_device_dict
-        data_to_send = jsonable_encoder(websocket_snapshot())
-        if not is_valid_json(data_to_send):
-            LOGGER.warning(f"Websocket dict isn't converted to JSON!")
-        else:
-            await websocket.send_json(data_to_send)
-            diagnostic_counters["websocket_initial_snapshots"] += 1
-        LOGGER.debug("Passed send_json test")
         while True:
             if events.val_updated_event.is_set():
                 # Clear before consuming/sending so an update arriving during the
@@ -803,22 +806,24 @@ async def websocket_writer(websocket: WebSocket):
                 if not is_valid_json(data_to_send):
                     LOGGER.warning(f"Websocket dict isn't converted to JSON!")
                     continue
-                for websocket in activeSockets:
-                    await websocket.send_json(data_to_send)
-                    diagnostic_counters["websocket_update_snapshots"] += 1
-                    if managed_delta:
-                        diagnostic_counters["websocket_delta_messages"] += 1
-                        diagnostic_counters["websocket_delta_objects"] += sum(
-                            len(objects) for objects in dict_to_send.values()
-                        )
+                for socket in list(activeSockets):
+                    try:
+                        await socket.send_json(data_to_send)
+                        diagnostic_counters["websocket_update_snapshots"] += 1
+                        if managed_delta:
+                            diagnostic_counters["websocket_delta_messages"] += 1
+                            diagnostic_counters["websocket_delta_objects"] += sum(
+                                len(objects) for objects in dict_to_send.values()
+                            )
+                    except Exception as err:
+                        if socket in activeSockets:
+                            activeSockets.remove(socket)
+                        LOGGER.debug(f"Removed disconnected WebSocket: {err}")
             else:
                 await asyncio.sleep(1)
 
     except asyncio.CancelledError as err:
         LOGGER.debug(f"Websocket writer cancelled: {err}")
-
-    except WebSocketDisconnect as err:
-        LOGGER.info(f"Websocket disconnected: {err}")
 
     except Exception as err:
         LOGGER.error(f"Error during writing: {err}")

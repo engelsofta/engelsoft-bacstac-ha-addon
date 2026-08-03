@@ -136,6 +136,8 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         self.pending_managed_updates: set[tuple[str, str]] = set()
         self.target_status: dict[tuple[str, str], dict[str, Any]] = {}
         self.cov_fallback_tasks: dict[tuple[str, str], asyncio.Task] = {}
+        self.cov_fallback_object_lists: dict[str, list[ObjectIdentifier]] = {}
+        self.cov_fallback_device_tasks: dict[str, asyncio.Task] = {}
         self.cov_watchdog_tasks: dict[tuple[str, str], asyncio.Task] = {}
         # The BACnet station benefits from bounded parallel discovery reads,
         # but can become unreliable when it receives a large burst. Keep this
@@ -423,9 +425,17 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
             )
 
     def _cancel_cov_fallback(self, target: tuple[str, str]) -> None:
-        task = self.cov_fallback_tasks.pop(target, None)
-        if task is not None and not task.done():
-            task.cancel()
+        self.cov_fallback_tasks.pop(target, None)
+        device_key, object_key = target
+        object_list = self.cov_fallback_object_lists.get(device_key, [])
+        object_identifier = ObjectIdentifier(object_key)
+        while object_identifier in object_list:
+            object_list.remove(object_identifier)
+        if not object_list:
+            task = self.cov_fallback_device_tasks.pop(device_key, None)
+            if task is not None and not task.done():
+                task.cancel()
+            self.cov_fallback_object_lists.pop(device_key, None)
         self.managed_poll_targets.discard(target)
         status = self.target_status.get(target)
         if status:
@@ -468,30 +478,44 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                 f"{target[0]},{target[1]},confirmed"
             )
 
-        task = asyncio.create_task(
-            self.poll_task(
-                device_identifier=ObjectIdentifier(device_identifier),
-                object_list=[ObjectIdentifier(object_identifier)],
-                poll_rate=(
-                    self.managed_poll_rate
-                    if self.subscription_mode
-                    in {"integration_controlled", "managed_polling", "managed_cov"}
-                    else max(
-                        30,
-                        int(
-                            self.get_config_from_addon_config(device_identifier).get(
-                                "slow_poll_rate", 600
-                            )
-                        ),
-                    )
+        device_key = target[0]
+        object_list = self.cov_fallback_object_lists.setdefault(device_key, [])
+        normalized_object = ObjectIdentifier(object_identifier)
+        if normalized_object not in object_list:
+            object_list.append(normalized_object)
+        task = self.cov_fallback_device_tasks.get(device_key)
+        created_worker = task is None or task.done()
+        if created_worker:
+            task = asyncio.create_task(
+                self.poll_task(
+                    device_identifier=ObjectIdentifier(device_identifier),
+                    object_list=object_list,
+                    poll_rate=(
+                        self.managed_poll_rate
+                        if self.subscription_mode
+                        in {
+                            "integration_controlled",
+                            "managed_polling",
+                            "managed_cov",
+                        }
+                        else max(
+                            30,
+                            int(
+                                self.get_config_from_addon_config(
+                                    device_identifier
+                                ).get("slow_poll_rate", 600)
+                            ),
+                        )
+                    ),
+                    property_list=[PropertyIdentifier("presentValue")],
                 ),
-                property_list=[PropertyIdentifier("presentValue")],
-            ),
-            name=f"cov-fallback-{target[0]}-{target[1]}",
-        )
+                name=f"cov-fallback-{device_key}",
+            )
+            self.cov_fallback_device_tasks[device_key] = task
         self.cov_fallback_tasks[target] = task
-        LOGGER.warning(
-            "Polling fallback active for %s %s (%s)",
+        log_method = LOGGER.warning if created_worker else LOGGER.debug
+        log_method(
+            "Polling fallback active for %s %s (%s); grouped by device",
             target[0],
             target[1],
             reason,
@@ -2201,7 +2225,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
 
     async def end_subscription_tasks(self):
         tasks = list(self.subscription_tasks)
-        tasks.extend(self.cov_fallback_tasks.values())
+        tasks.extend(self.cov_fallback_device_tasks.values())
         tasks.extend(self.cov_watchdog_tasks.values())
         tasks.extend(self.managed_poll_tasks.values())
         for task in tasks:
@@ -2215,6 +2239,8 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                 )
         self.subscription_tasks.clear()
         self.cov_fallback_tasks.clear()
+        self.cov_fallback_device_tasks.clear()
+        self.cov_fallback_object_lists.clear()
         self.cov_watchdog_tasks.clear()
         self.managed_poll_tasks.clear()
         LOGGER.info("Cancelled all subscriptions")

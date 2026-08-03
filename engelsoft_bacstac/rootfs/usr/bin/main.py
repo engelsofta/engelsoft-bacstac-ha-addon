@@ -181,12 +181,24 @@ async def subscribe_handler_task(app: Application, sub_queue: asyncio.Queue) -> 
                     )
                     break
             else:
-                await app.create_subscription_task(
+                created = await app.create_subscription_task(
                     device_identifier=device_identifier,
                     object_identifier=object_identifier,
                     confirmed_notifications=notifications,
                     lifetime=lifetime,
                 )
+                if app.subscription_mode == "integration_controlled":
+                    target = app._target_key(device_identifier, object_identifier)
+                    app.managed_targets.add(target)
+                    app.managed_requested_modes[target] = "cov"
+                    app._ensure_target_status(target, "cov")
+                    if created:
+                        notification_name = (
+                            "confirmed" if notifications else "unconfirmed"
+                        )
+                        app.managed_cov_task_names.add(
+                            f"{target[0]},{target[1]},{notification_name}"
+                        )
 
     except asyncio.CancelledError as err:
         LOGGER.warning(f"Subscribe task cancelled: {err}")
@@ -208,6 +220,14 @@ async def unsubscribe_handler_task(
             status = app.target_status.get(target)
             if status:
                 status["state"] = "cancelled"
+            if app.subscription_mode == "integration_controlled":
+                app.managed_targets.discard(target)
+                app.managed_requested_modes.pop(target, None)
+                app.managed_cov_task_names = {
+                    name
+                    for name in app.managed_cov_task_names
+                    if not name.startswith(f"{target[0]},{target[1]},")
+                }
 
             for task in app.subscription_tasks:
                 if task_name in task.get_name():
