@@ -2,6 +2,12 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.2.5
+03/08/2026
+
+## Fixed
+- Made the COV confirmation counter use every COV target requested by the integration as its total from the beginning, instead of growing the total alongside the throttled subscription build.
+
 # 1.2.4
 03/08/2026
 

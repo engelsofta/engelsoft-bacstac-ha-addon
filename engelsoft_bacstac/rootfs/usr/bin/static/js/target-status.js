@@ -12,10 +12,10 @@
   if (!input || !count) return;
 
   const updateSummaries = () => {
-    const activeCov = rows.filter((row) => Number(row.dataset.sortCov || 0) > 0);
-    const confirmedCov = activeCov.filter((row) => row.dataset.covConfirmed === "true");
+    const requestedCov = rows.filter((row) => row.dataset.covRequested === "true");
+    const confirmedCov = requestedCov.filter((row) => row.dataset.covConfirmed === "true");
     const selectedCov = document.querySelectorAll("[data-subscription-checkbox]:checked").length;
-    if (confirmedCount) confirmedCount.textContent = `${confirmedCov.length} von ${activeCov.length}`;
+    if (confirmedCount) confirmedCount.textContent = `${confirmedCov.length} von ${requestedCov.length}`;
     if (selectedCount) selectedCount.textContent = String(selectedCov);
     if (removeButton) removeButton.disabled = selectedCov === 0;
   };
