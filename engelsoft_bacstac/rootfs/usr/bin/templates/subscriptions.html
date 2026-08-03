@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="{{ url_for('static', path='/js/theme.js') }}?v=1.0.0"></script>
     <script defer src="{{ url_for('static', path='/js/mode-status.js') }}?v=1.2.0"></script>
-    <link href="{{ url_for('static', path='/css/styles.css') }}?v=2.1.0-theme" rel="stylesheet">
+    <script defer src="{{ url_for('static', path='/js/target-status.js') }}?v=1.2.2"></script>
+    <link href="{{ url_for('static', path='/css/styles.css') }}?v=1.2.2-ui" rel="stylesheet">
     <title>Engelsoft BACstac – Subscriptions</title>
 </head>
 <body>
@@ -33,10 +34,25 @@
         </div>
         <div class="div4">
             <label class="status-title">
-                Zielstatus
+                <span>Zielstatus <b class="target-count">{{ targets|length }}</b></span>
                 <small>COV-Bestätigung, letzter Transport und Wertealter</small>
             </label>
-            <div class="target-status-table">
+            <div class="target-toolbar">
+                <label class="target-search">
+                    <span aria-hidden="true">⌕</span>
+                    <input type="search" id="target-filter" placeholder="Gerät, Objekt oder Status filtern …" autocomplete="off">
+                </label>
+                <div class="target-filter-buttons" role="group" aria-label="Zielstatus filtern">
+                    <button type="button" class="active" data-target-filter="all">Alle</button>
+                    <button type="button" data-target-filter="cov">COV</button>
+                    <button type="button" data-target-filter="polling">Polling</button>
+                    <button type="button" data-target-filter="fallback">Fallback</button>
+                    <button type="button" data-target-filter="disabled">Aus</button>
+                </div>
+                <span class="target-visible-count"><b id="visible-target-count">{{ targets|length }}</b> sichtbar</span>
+            </div>
+            <div class="target-status-scroll">
+              <div class="target-status-table">
                 <div class="target-status-grid target-status-header">
                     <span>Gerät / Objekt</span>
                     <span>Status</span>
@@ -46,10 +62,10 @@
                     <span>Wertealter</span>
                 </div>
                 {% for target in targets %}
-                <div class="target-status-grid target-status-row">
+                <div class="target-status-grid target-status-row" data-target-row data-state="{{ target.state }}" data-fallback="{{ 'true' if target.fallback_active else 'false' }}" data-search="{{ target.device_id }} {{ target.object_id }} {{ target.state }} {{ target.fallback_reason or '' }}">
                     <span><strong>{{ target.device_id }}</strong><small>{{ target.object_id }}</small></span>
                     <span>
-                        <strong>{{ target.state }}</strong>
+                        <strong class="status-badge status-{{ target.state }}">{{ target.state|replace('_', ' ') }}</strong>
                         {% if target.fallback_active %}<small>Fallback: {{ target.fallback_reason }}</small>{% endif %}
                     </span>
                     <span>{{ "Ja" if target.subscription_confirmed else "Nein" }}</span>
@@ -60,6 +76,7 @@
                 {% else %}
                 <p class="empty-state">Noch keine Aktualisierungsziele aktiv. In einem verwalteten Modus werden sie von Engelsoft Beacon BACnet/IP übermittelt.</p>
                 {% endfor %}
+              </div>
             </div>
 
             <h2 class="subsection-title">Aktive COV-Tasks</h2>

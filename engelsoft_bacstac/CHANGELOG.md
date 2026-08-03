@@ -2,6 +2,16 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.2.2
+03/08/2026
+
+## Fixed
+- Busted the Home Assistant Ingress stylesheet cache so the target status page no longer falls back to an outdated unstyled layout.
+
+## Improved
+- Redesigned the large target status list with search, transport filters, visible result count, status badges, sticky headers and a bounded scrolling area.
+- Improved responsive behavior for the target toolbar on narrow screens.
+
 # 1.2.1
 03/08/2026
 
