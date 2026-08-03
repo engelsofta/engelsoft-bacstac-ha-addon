@@ -43,7 +43,8 @@
                     <input type="search" id="target-filter" placeholder="Gerät, Objekt oder Status filtern …" autocomplete="off">
                 </label>
                 <div class="target-filter-buttons" role="group" aria-label="Zielstatus filtern">
-                    <button type="button" class="active" data-target-filter="all">Alle</button>
+                    <button type="button" class="active" data-target-filter="active">Aktiv</button>
+                    <button type="button" data-target-filter="all">Alle</button>
                     <button type="button" data-target-filter="cov">COV</button>
                     <button type="button" data-target-filter="polling">Polling</button>
                     <button type="button" data-target-filter="fallback">Fallback</button>
@@ -53,6 +54,21 @@
             </div>
             <div class="target-status-scroll">
               <div class="target-status-table">
+                {% set state_labels = {
+                    'cov_active': 'COV aktiv',
+                    'cov_waiting': 'Wartet auf COV',
+                    'subscribing': 'COV-Anmeldung',
+                    'polling': 'Polling',
+                    'polling_fallback': 'Polling-Fallback',
+                    'disabled': 'Deaktiviert',
+                    'cancelled': 'Beendet',
+                    'waiting': 'Wartend'
+                } %}
+                {% set fallback_labels = {
+                    'cov_limit': 'COV-Limit',
+                    'cov_silent': 'Keine COV-Werte',
+                    'cov_failed': 'COV fehlgeschlagen'
+                } %}
                 <div class="target-status-grid target-status-header">
                     <span>Gerät / Objekt</span>
                     <span>Status</span>
@@ -65,8 +81,8 @@
                 <div class="target-status-grid target-status-row" data-target-row data-state="{{ target.state }}" data-fallback="{{ 'true' if target.fallback_active else 'false' }}" data-search="{{ target.device_id }} {{ target.object_id }} {{ target.state }} {{ target.fallback_reason or '' }}">
                     <span><strong>{{ target.device_id }}</strong><small>{{ target.object_id }}</small></span>
                     <span>
-                        <strong class="status-badge status-{{ target.state }}">{{ target.state|replace('_', ' ') }}</strong>
-                        {% if target.fallback_active %}<small>Fallback: {{ target.fallback_reason }}</small>{% endif %}
+                        <strong class="status-badge status-{{ target.state }}">{{ state_labels.get(target.state, target.state|replace('_', ' ')) }}</strong>
+                        {% if target.fallback_active %}<small>Grund: {{ fallback_labels.get(target.fallback_reason, target.fallback_reason) }}</small>{% endif %}
                     </span>
                     <span>{{ "Ja" if target.subscription_confirmed else "Nein" }}</span>
                     <span>{{ target.last_cov_age_seconds ~ " s" if target.last_cov_age_seconds is not none else "—" }}</span>

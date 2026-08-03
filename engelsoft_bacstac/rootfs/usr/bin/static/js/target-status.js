@@ -6,7 +6,7 @@
   const buttons = Array.from(document.querySelectorAll("[data-target-filter]"));
   if (!input || !count) return;
 
-  let selected = "all";
+  let selected = "active";
   const apply = () => {
     const query = input.value.trim().toLocaleLowerCase();
     let visible = 0;
@@ -14,6 +14,7 @@
       const state = row.dataset.state || "";
       const matchesState =
         selected === "all" ||
+        (selected === "active" && state !== "disabled" && state !== "cancelled") ||
         (selected === "cov" && state.startsWith("cov")) ||
         (selected === "polling" && state === "polling") ||
         (selected === "fallback" && row.dataset.fallback === "true") ||

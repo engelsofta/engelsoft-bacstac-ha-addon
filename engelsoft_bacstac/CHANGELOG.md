@@ -10,6 +10,7 @@
 
 ## Improved
 - Redesigned the large target status list with search, transport filters, visible result count, status badges, sticky headers and a bounded scrolling area.
+- Hid disabled targets from the default view and replaced internal state names with readable German labels.
 - Improved responsive behavior for the target toolbar on narrow screens.
 
 # 1.2.1
