@@ -14,3 +14,4 @@ Aktualisierungssteuerung.
 - Aktives COV sowie Confirmed oder Unconfirmed sind direkt in der COV-Spalte sichtbar.
 - Alle Spalten lassen sich per Klick sortieren; Zeitspalten werden numerisch sortiert.
 - Die Tabelle aktualisiert ihren Status automatisch, ohne Filter, Sortierung oder markierte COV-Tasks zurückzusetzen.
+- Wiederholte, unveränderte Ziellisten der Integration starten den gedrosselten COV-Aufbau nicht mehr neu; dadurch werden auch die hinteren Datenpunkte zuverlässig abgearbeitet.

@@ -945,6 +945,25 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
             for target, task in self.cov_fallback_tasks.items()
             if not task.done()
         }
+        planned_poll_targets = explicit_poll_targets | overflow_keys
+        same_plan = (
+            requested_modes == self.managed_requested_modes
+            and desired_names == self.managed_cov_task_names
+            and planned_poll_targets == self.managed_poll_targets
+        )
+        if (
+            same_plan
+            and self.managed_cov_reconcile_task is not None
+            and not self.managed_cov_reconcile_task.done()
+        ):
+            # The integration periodically repeats its complete target list.
+            # Do not restart a throttled COV build, otherwise large devices
+            # repeatedly begin at the first object and later objects remain
+            # in the initial waiting state indefinitely.
+            return self._managed_target_response(
+                unchanged=True,
+                reconcile_in_progress=True,
+            )
         polling_tasks_ready = all(
             task is not None and not task.done()
             for task in self.managed_poll_tasks.values()
@@ -984,7 +1003,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
             self._cancel_cov_fallback(target)
             status = self._ensure_target_status(target, "polling")
             status["state"] = "polling"
-        self.managed_poll_targets = explicit_poll_targets | overflow_keys
+        self.managed_poll_targets = planned_poll_targets
 
         if (
             self.managed_cov_reconcile_task is not None

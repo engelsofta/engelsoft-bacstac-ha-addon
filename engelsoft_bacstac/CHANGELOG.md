@@ -8,6 +8,7 @@
 ## Fixed
 - Prevented the update-control summary from overflowing behind the target and action panels.
 - Kept navigation and mode summary on one clean row on wide screens and added controlled wrapping with automatic row height on narrower layouts.
+- Prevented repeated identical integration target lists from restarting an in-progress throttled COV build, which could leave later targets waiting indefinitely.
 
 ## Improved
 - Merged the separate active-COV task list into the main target status table.
