@@ -10,3 +10,6 @@ Aktualisierungssteuerung.
 - Zielstatus und Aktionsbereich werden nicht mehr von Elementen im Hintergrund
   überlagert.
 - Eine neue Stylesheet-Version umgeht erneut ältere Ingress-Caches.
+- Zielstatus und aktive COV-Tasks wurden zu einer einzigen Tabelle zusammengeführt.
+- Aktives COV sowie Confirmed oder Unconfirmed sind direkt in der COV-Spalte sichtbar.
+- Alle Spalten lassen sich per Klick sortieren; Zeitspalten werden numerisch sortiert.

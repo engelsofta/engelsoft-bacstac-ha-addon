@@ -384,9 +384,28 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
     def target_status_snapshot(self) -> list[dict[str, Any]]:
         """Return serializable per-target transport and freshness diagnostics."""
         now = time.time()
+        active_subscription_names = {
+            task.get_name()
+            for task in self.subscription_tasks
+            if not task.done() and not task.cancelling()
+        }
         snapshot = []
         for target in sorted(self.target_status):
             status = dict(self.target_status[target])
+            task_prefix = f"{target[0]},{target[1]},"
+            active_task_name = next(
+                (
+                    name
+                    for name in active_subscription_names
+                    if name.startswith(task_prefix)
+                ),
+                None,
+            )
+            status["cov_task_active"] = active_task_name is not None
+            status["cov_confirmation"] = (
+                active_task_name.rsplit(",", 1)[-1] if active_task_name else None
+            )
+            status["cov_task_name"] = active_task_name
             status["subscription_confirmed"] = bool(
                 status.get("subscription_confirmed_at")
             )

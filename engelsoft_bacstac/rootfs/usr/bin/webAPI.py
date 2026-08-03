@@ -247,7 +247,6 @@ async def subscriptions(request: Request):
         "subscriptions.html",
         {
             "request": request,
-            "subs": sub_list,
             "sidebar": sidebar_status(),
             "targets": (
                 bacnet_application.target_status_snapshot()

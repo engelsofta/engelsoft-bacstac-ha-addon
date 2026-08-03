@@ -393,6 +393,26 @@ th { position: sticky; top: 0; color: var(--muted); background: var(--surface-2)
   letter-spacing: .04em;
   text-transform: uppercase;
 }
+.target-status-header button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 5px;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  text-transform: inherit;
+  cursor: pointer;
+}
+.target-status-header button:hover, .target-status-header button.active { color: var(--gold-light); }
+.target-status-header button i::after { content: "↕"; opacity: .35; font-style: normal; }
+.target-status-header button.active[aria-sort="ascending"] i::after { content: "↑"; opacity: 1; }
+.target-status-header button.active[aria-sort="descending"] i::after { content: "↓"; opacity: 1; }
 .target-status-row {
   margin-top: 7px;
   padding: 11px 12px;
@@ -406,6 +426,10 @@ th { position: sticky; top: 0; color: var(--muted); background: var(--surface-2)
 .target-status-row span { min-width: 0; overflow-wrap: anywhere; }
 .target-status-row strong { display: block; font-size: 12px; }
 .target-status-row small { display: block; margin-top: 2px; color: var(--muted); font-size: 10px; }
+.target-identity { display: flex; align-items: center; gap: 9px; }
+.target-identity input { width: 15px; height: 15px; flex: 0 0 15px; accent-color: var(--gold); }
+.cov-cell { display: flex; align-items: flex-start; flex-direction: column; gap: 2px; }
+.muted-value { color: var(--muted); }
 .status-badge {
   display: inline-flex !important;
   width: fit-content;

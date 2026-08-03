@@ -70,21 +70,34 @@
                     'cov_failed': 'COV fehlgeschlagen'
                 } %}
                 <div class="target-status-grid target-status-header">
-                    <span>Gerät / Objekt</span>
-                    <span>Status</span>
-                    <span>COV bestätigt</span>
-                    <span>Letztes COV</span>
-                    <span>Letzter Poll</span>
-                    <span>Wertealter</span>
+                    <button type="button" data-sort="target">Gerät / Objekt <i></i></button>
+                    <button type="button" data-sort="state">Status <i></i></button>
+                    <button type="button" data-sort="cov">COV <i></i></button>
+                    <button type="button" data-sort="last_cov">Letztes COV <i></i></button>
+                    <button type="button" data-sort="last_poll">Letzter Poll <i></i></button>
+                    <button type="button" data-sort="value_age">Wertealter <i></i></button>
                 </div>
                 {% for target in targets %}
-                <div class="target-status-grid target-status-row" data-target-row data-state="{{ target.state }}" data-fallback="{{ 'true' if target.fallback_active else 'false' }}" data-search="{{ target.device_id }} {{ target.object_id }} {{ target.state }} {{ target.fallback_reason or '' }}">
-                    <span><strong>{{ target.device_id }}</strong><small>{{ target.object_id }}</small></span>
+                <div class="target-status-grid target-status-row" data-target-row data-state="{{ target.state }}" data-fallback="{{ 'true' if target.fallback_active else 'false' }}" data-search="{{ target.device_id }} {{ target.object_id }} {{ target.state }} {{ target.fallback_reason or '' }}" data-sort-target="{{ target.device_id }}/{{ target.object_id }}" data-sort-state="{{ target.state }}" data-sort-cov="{{ 2 if target.cov_task_active and target.cov_confirmation == 'confirmed' else 1 if target.cov_task_active else 0 }}" data-sort-last-cov="{{ target.last_cov_age_seconds if target.last_cov_age_seconds is not none else 'null' }}" data-sort-last-poll="{{ target.last_poll_age_seconds if target.last_poll_age_seconds is not none else 'null' }}" data-sort-value-age="{{ target.last_value_age_seconds if target.last_value_age_seconds is not none else 'null' }}">
+                    <span class="target-identity">
+                        {% if target.cov_task_active %}<input type="checkbox" data-subscription-checkbox value="{{ target.cov_task_name }}" aria-label="COV für {{ target.device_id }} {{ target.object_id }} auswählen">{% endif %}
+                        <span><strong>{{ target.device_id }}</strong><small>{{ target.object_id }}</small></span>
+                    </span>
                     <span>
                         <strong class="status-badge status-{{ target.state }}">{{ state_labels.get(target.state, target.state|replace('_', ' ')) }}</strong>
                         {% if target.fallback_active %}<small>Grund: {{ fallback_labels.get(target.fallback_reason, target.fallback_reason) }}</small>{% endif %}
                     </span>
-                    <span>{{ "Ja" if target.subscription_confirmed else "Nein" }}</span>
+                    <span class="cov-cell">
+                        {% if target.cov_task_active %}
+                            <strong class="status-badge status-cov_active">COV aktiv</strong>
+                            <small>{{ "Confirmed" if target.cov_confirmation == "confirmed" else "Unconfirmed" }}</small>
+                        {% elif target.subscription_confirmed %}
+                            <strong class="status-badge status-cancelled">Beendet</strong>
+                            <small>war bestätigt</small>
+                        {% else %}
+                            <span class="muted-value">—</span>
+                        {% endif %}
+                    </span>
                     <span>{{ target.last_cov_age_seconds ~ " s" if target.last_cov_age_seconds is not none else "—" }}</span>
                     <span>{{ target.last_poll_age_seconds ~ " s" if target.last_poll_age_seconds is not none else "—" }}</span>
                     <span>{{ target.last_value_age_seconds ~ " s" if target.last_value_age_seconds is not none else "—" }}</span>
@@ -95,17 +108,6 @@
               </div>
             </div>
 
-            <h2 class="subsection-title">Aktive COV-Tasks</h2>
-            {% for key in subs %}
-            <label class="selectable-label">
-                <input type="checkbox" id="checkbox-{{ key.get_name() }}">
-                <span class="ede_selection">
-                    <a>{{ key.get_name().split(",")[0] }}</a>
-                    <a>{{ key.get_name().split(",")[1] }}</a>
-                    <a>{{ key.get_name().split(",")[2] }}</a>
-                </span>
-            </label>
-            {% endfor %}
         </div>
         <div class="div5">
             <form id="form">
@@ -194,11 +196,11 @@
 
         function removeSubscription() {
             // Get all checkboxes that are checked
-            var checkboxes = document.querySelectorAll('.selectable-label input[type="checkbox"]:checked');
+            var checkboxes = document.querySelectorAll('[data-subscription-checkbox]:checked');
 
             // Get the selected keys as an array
             var keys = Array.from(checkboxes).map(function (checkbox) {
-                return checkbox.id.replace('checkbox-', '');
+                return checkbox.value;
             });
 
             var error = false;

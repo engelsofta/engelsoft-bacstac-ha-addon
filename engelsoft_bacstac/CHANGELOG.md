@@ -9,6 +9,11 @@
 - Prevented the update-control summary from overflowing behind the target and action panels.
 - Kept navigation and mode summary on one clean row on wide screens and added controlled wrapping with automatic row height on narrower layouts.
 
+## Improved
+- Merged the separate active-COV task list into the main target status table.
+- Added clear COV-active and Confirmed/Unconfirmed indicators plus in-row selection for manual removal.
+- Made every target table column sortable with natural object ordering and numeric age sorting.
+
 # 1.2.2
 03/08/2026
 
