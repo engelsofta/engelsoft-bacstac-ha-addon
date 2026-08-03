@@ -294,6 +294,35 @@ table { width: 100%; border-collapse: collapse; }
 th, td { padding: 9px; border-bottom: 1px solid var(--line-soft); text-align: left; }
 th { position: sticky; top: 0; color: var(--muted); background: var(--surface-2); }
 
+.target-status-table { min-width: 860px; }
+.target-status-grid {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.35fr) minmax(145px, 1fr) repeat(4, minmax(100px, .7fr));
+  align-items: center;
+  gap: 10px;
+}
+.target-status-header {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.target-status-row {
+  margin-top: 7px;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+.target-status-row span { min-width: 0; overflow-wrap: anywhere; }
+.target-status-row strong { display: block; font-size: 12px; }
+.target-status-row small { display: block; margin-top: 2px; color: var(--muted); font-size: 10px; }
+.empty-state { margin: 8px 0; padding: 18px; border: 1px dashed var(--line); border-radius: 8px; color: var(--muted); }
+.subsection-title { margin: 22px 2px 10px; color: var(--gold-light); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+
 @media (max-width: 900px) {
   body { overflow: auto; }
   .parent { display: flex; flex-direction: column; width: 100%; height: auto; min-height: 100vh; padding: 0 8px 8px; }

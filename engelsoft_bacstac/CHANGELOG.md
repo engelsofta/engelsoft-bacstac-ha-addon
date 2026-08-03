@@ -2,6 +2,18 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.2.0
+03/08/2026
+
+## Security and reliability
+- Changed the fresh-install default from legacy subscriptions to managed polling.
+- Changed the legacy default COV list from `all` to an empty list.
+- Added a configurable per-device COV limit, defaulting to 20; excess targets automatically use polling.
+- Added configurable pacing between COV subscription requests.
+- Added automatic polling fallback when a COV request fails or a confirmed subscription delivers no value.
+- Downgraded harmless duplicate subscription requests from error to debug logging.
+- Added per-target diagnostics for subscription confirmation, last COV update, last poll and current value age.
+
 # 1.1.0
 02/08/2026
 

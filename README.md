@@ -16,8 +16,11 @@ bereit.
 
 - **Automatische BACnet-Erkennung:** Findet erreichbare BACnet/IP-Geräte und liest
   deren Objektbestand ein.
-- **Schnelle Wertaktualisierung:** Nutzt verwaltete COV-Abonnements und kann bei
-  Bedarf kontrolliert auf Polling zurückfallen.
+- **Sichere Wertaktualisierung:** Startet standardmäßig mit verwaltetem Polling.
+  Optionales COV wird pro Gerät begrenzt, gedrosselt aufgebaut und fällt bei
+  ausbleibenden Meldungen automatisch auf Polling zurück.
+- **Transparenter Zielstatus:** Zeigt je Objekt die bestätigte COV-Anmeldung,
+  letzte COV-Nachricht, letzte Abfrage und das Alter des aktuellen Wertes.
 - **Robuster Neustart:** Ein versionierter, geprüfter Inventar-Cache stellt den
   zuletzt vollständig erkannten Objektbestand nach einem Neustart frühzeitig bereit.
 - **Klare Aufgabentrennung:** BACstac kommuniziert mit BACnet; Engelsoft Beacon

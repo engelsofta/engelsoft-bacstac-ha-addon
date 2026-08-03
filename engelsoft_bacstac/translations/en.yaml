@@ -14,10 +14,19 @@ configuration:
     description: Priority of the BACnet write request. Priority 1 is highest, priority 16 is lowest it can go.
   subscription_mode:
     name: Integration update mode
-    description: "Controls how Engelsoft BACstac works with Engelsoft Beacon BACnet/IP. legacy uses the device rules configured below. managed_polling lets the integration provide the required BACnet objects and polls only those objects. managed_cov lets the integration provide the required objects and creates Change of Value subscriptions for them; this is the recommended mode when the BACnet devices support COV."
+    description: "Controls how BACstac works with Engelsoft Beacon BACnet/IP. managed_polling is the safe default and polls only objects requested by the integration. managed_cov creates limited COV subscriptions with automatic polling fallback. legacy uses only the device rules configured below."
   managed_poll_rate:
     name: Managed polling interval
     description: Polling interval in seconds when managed_polling is selected. Lower values update faster but generate more BACnet traffic.
+  managed_cov_subscription_delay:
+    name: Delay between COV subscriptions
+    description: Delay in seconds between COV subscription requests to protect sensitive BACnet devices from request bursts.
+  managed_cov_fallback_timeout:
+    name: COV fallback timeout
+    description: Seconds to wait for the first value notification after a confirmed COV subscription before polling takes over automatically.
+  CoV_limit:
+    name: Maximum COV subscriptions per device
+    description: Maximum number of simultaneous COV subscriptions for each BACnet device. Additional objects are polled automatically. Set to 0 to disable COV for that device.
   loglevel:
     name: Level of Logging
     description: The severity of log messages being displayed.

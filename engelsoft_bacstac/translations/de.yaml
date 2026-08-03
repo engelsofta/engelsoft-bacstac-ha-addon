@@ -14,10 +14,19 @@ configuration:
     description: Standardpriorität für BACnet-Schreibzugriffe. Priorität 1 ist die höchste, Priorität 16 die niedrigste.
   subscription_mode:
     name: Aktualisierungsmodus der Integration
-    description: "Bestimmt das Zusammenspiel von Engelsoft BACstac mit Engelsoft Beacon BACnet/IP. legacy verwendet die unten konfigurierten Geräteregeln. managed_polling übernimmt die benötigten BACnet-Objekte von der Integration und fragt nur diese zyklisch ab. managed_cov übernimmt ebenfalls die benötigten Objekte von der Integration und richtet dafür Change-of-Value-Abonnements ein; dieser Modus wird empfohlen, wenn die BACnet-Geräte COV unterstützen."
+    description: "Bestimmt das Zusammenspiel mit Engelsoft Beacon BACnet/IP. managed_polling ist der sichere Standard und fragt nur die von der Integration benötigten Objekte ab. managed_cov richtet dafür COV-Abonnements mit Limit und Polling-Fallback ein. legacy verwendet ausschließlich die unten konfigurierten Geräteregeln."
   managed_poll_rate:
     name: Verwaltetes Abfrageintervall
     description: Abfrageintervall in Sekunden für managed_polling. Kleinere Werte liefern schnellere Aktualisierungen, erzeugen aber mehr BACnet-Datenverkehr.
+  managed_cov_subscription_delay:
+    name: Abstand zwischen COV-Anmeldungen
+    description: Wartezeit in Sekunden zwischen zwei COV-Anmeldungen. Schützt empfindliche BACnet-Geräte vor zu vielen Anforderungen in kurzer Folge.
+  managed_cov_fallback_timeout:
+    name: COV-Fallback-Zeit
+    description: Zeit in Sekunden, die nach einer bestätigten COV-Anmeldung auf die erste Wertmeldung gewartet wird. Danach übernimmt automatisch Polling.
+  CoV_limit:
+    name: Maximale COV-Abonnements pro Gerät
+    description: Obergrenze gleichzeitig angelegter COV-Abonnements je BACnet-Gerät. Weitere Objekte werden automatisch gepollt. 0 deaktiviert COV für das Gerät.
   loglevel:
     name: Protokollierungsstufe
     description: Bestimmt, wie ausführlich Meldungen im Add-on-Protokoll ausgegeben werden.

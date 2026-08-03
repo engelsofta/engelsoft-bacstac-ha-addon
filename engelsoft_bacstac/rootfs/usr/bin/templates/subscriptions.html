@@ -23,11 +23,37 @@
             <a href="./ede" title="Page where you can see manage EDE files."><span>▤</span> EDE</a>
         </div>
         <div class="div4">
-            <label>
-                <a>Device Identifier</a>
-                <a>Object Identifier</a>
-                <a>Confirmation Type</a>
+            <label class="status-title">
+                Zielstatus
+                <small>COV-Bestätigung, letzter Transport und Wertealter</small>
             </label>
+            <div class="target-status-table">
+                <div class="target-status-grid target-status-header">
+                    <span>Gerät / Objekt</span>
+                    <span>Status</span>
+                    <span>COV bestätigt</span>
+                    <span>Letztes COV</span>
+                    <span>Letzter Poll</span>
+                    <span>Wertealter</span>
+                </div>
+                {% for target in targets %}
+                <div class="target-status-grid target-status-row">
+                    <span><strong>{{ target.device_id }}</strong><small>{{ target.object_id }}</small></span>
+                    <span>
+                        <strong>{{ target.state }}</strong>
+                        {% if target.fallback_active %}<small>Fallback: {{ target.fallback_reason }}</small>{% endif %}
+                    </span>
+                    <span>{{ "Ja" if target.subscription_confirmed else "Nein" }}</span>
+                    <span>{{ target.last_cov_age_seconds ~ " s" if target.last_cov_age_seconds is not none else "—" }}</span>
+                    <span>{{ target.last_poll_age_seconds ~ " s" if target.last_poll_age_seconds is not none else "—" }}</span>
+                    <span>{{ target.last_value_age_seconds ~ " s" if target.last_value_age_seconds is not none else "—" }}</span>
+                </div>
+                {% else %}
+                <p class="empty-state">Noch keine Aktualisierungsziele aktiv. In einem verwalteten Modus werden sie von Engelsoft Beacon BACnet/IP übermittelt.</p>
+                {% endfor %}
+            </div>
+
+            <h2 class="subsection-title">Aktive COV-Tasks</h2>
             {% for key in subs %}
             <label class="selectable-label">
                 <input type="checkbox" id="checkbox-{{ key.get_name() }}">
@@ -38,7 +64,6 @@
                 </span>
             </label>
             {% endfor %}
-
         </div>
         <div class="div5">
             <form id="form">

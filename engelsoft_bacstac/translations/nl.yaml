@@ -14,10 +14,19 @@ configuration:
     description: Prioriteit van een BACnet schrijf request. 1 is hoogste en 16 is laagste prioriteit.
   subscription_mode:
     name: Updatemodus van de integratie
-    description: "Bepaalt hoe Engelsoft BACstac samenwerkt met Engelsoft Beacon BACnet/IP. legacy gebruikt de hieronder ingestelde apparaatregels. managed_polling ontvangt de benodigde BACnet-objecten van de integratie en pollt alleen deze objecten. managed_cov ontvangt eveneens de benodigde objecten en maakt hiervoor Change of Value-abonnementen aan; deze modus wordt aanbevolen wanneer de BACnet-apparaten COV ondersteunen."
+    description: "Bepaalt de samenwerking met Engelsoft Beacon BACnet/IP. managed_polling is de veilige standaard en pollt alleen objecten die de integratie nodig heeft. managed_cov gebruikt beperkte COV-abonnementen met automatische pollingfallback. legacy gebruikt uitsluitend de apparaatregels hieronder."
   managed_poll_rate:
     name: Beheerd pollinginterval
     description: Pollinginterval in seconden voor managed_polling. Lagere waarden zorgen voor snellere updates, maar genereren meer BACnet-verkeer.
+  managed_cov_subscription_delay:
+    name: Pauze tussen COV-abonnementen
+    description: Wachttijd in seconden tussen COV-aanvragen om gevoelige BACnet-apparaten tegen aanvraagpieken te beschermen.
+  managed_cov_fallback_timeout:
+    name: COV-fallbacktijd
+    description: Aantal seconden dat na een bevestigd COV-abonnement op de eerste waardemelding wordt gewacht voordat polling automatisch overneemt.
+  CoV_limit:
+    name: Maximum COV-abonnementen per apparaat
+    description: Maximaal aantal gelijktijdige COV-abonnementen per BACnet-apparaat. Overige objecten worden automatisch gepolld. 0 schakelt COV voor dit apparaat uit.
   loglevel:
     name: Loggingsniveau
     description: Het niveau waarop de gebeurtenissen gelogd worden.

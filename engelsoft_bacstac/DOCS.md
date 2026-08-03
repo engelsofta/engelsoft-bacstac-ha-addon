@@ -105,11 +105,15 @@ objectName: Engelsoft BACstac
 address: auto
 objectIdentifier: 420
 defaultPriority: 15
+subscription_mode: managed_polling
+managed_poll_rate: 10
+managed_cov_subscription_delay: 1
+managed_cov_fallback_timeout: 30
 devices_setup:
   - deviceID: all
-    CoV_lifetime: 60
-    CoV_list:
-      - all
+    CoV_lifetime: 600
+    CoV_limit: 20
+    CoV_list: []
     quick_poll_rate: 5
     quick_poll_list: []
     slow_poll_rate: 600
@@ -152,6 +156,15 @@ Low number means high priority.
 High number means low priority. 
 Recommended to keep at 15 or 16 unless you know what a higher priority can do to your BACnet devices.
 
+### Options: safe update handling
+
+- `subscription_mode`: `managed_polling` is the safe default. Engelsoft Beacon BACnet/IP sends the required targets to the add-on and BACstac polls only those targets. `managed_cov` uses COV where possible and automatically polls excess, failed or silent COV targets. `legacy` uses only the static `devices_setup` rules.
+- `managed_poll_rate`: Polling interval in seconds for integration-managed targets.
+- `managed_cov_subscription_delay`: Delay in seconds between COV subscription requests. A value of 1 avoids sending a burst of requests to sensitive controllers.
+- `managed_cov_fallback_timeout`: Time in seconds after a confirmed COV subscription to wait for its first value. If no value arrives, the target is polled automatically.
+
+The **Subscriptions** page shows the state of every managed target, when its COV subscription was confirmed, the last COV notification, the last poll and the age of its current value.
+
 ### Option: `devices_setup` Device Setup
 
 The `devices_setup` configuration is a list of configurations for specific devices. 
@@ -160,9 +173,9 @@ Each list entry will contain a deviceID along with settings for Change of Value 
 ```yaml
 devices_setup:
   - deviceID: device:1835087
-    CoV_lifetime: 60
-    CoV_list:
-      - all
+    CoV_lifetime: 600
+    CoV_limit: 20
+    CoV_list: []
     quick_poll_rate: 5
     quick_poll_list: []
     slow_poll_rate: 600
@@ -172,7 +185,8 @@ devices_setup:
 
 - `deviceID` This key contains the device identifier (in "device:xxxx" format where xxxx is the number) for the device you want the following options to count for. A special "all" key will make the settings below a general configuration.
 - `CoV_lifetime` This key contains the lifetime for each CoV subscription made. This value is in seconds and can be between 60 and 28800. The add-on will automatically resubscribe once the lifetime has passed.
-- `CoV_list` This key contains a list containing each object identifier (in "object:xxxx" format where xxxx is the number and object written in the format as seen below) the add-on has to subscribe to. A special "all" key will make the add-on subscribe to all supported objects of the device. The list can be empty if no CoV subscriptions are desired.
+- `CoV_limit` limits simultaneous COV subscriptions for this device. The default is 20. Additional integration-managed targets automatically use polling. Set it to 0 to disable COV for the device.
+- `CoV_list` contains each object identifier (in `object:xxxx` form) that legacy mode should subscribe to. It is empty by default. The special `all` value can create a very large number of subscriptions and should only be used when the device's documented COV capacity is known; the configured COV limit still applies.
 ```yaml
 analogInput
 analogOutput

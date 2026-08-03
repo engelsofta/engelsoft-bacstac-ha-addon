@@ -170,9 +170,13 @@ async def subscribe_handler_task(app: Application, sub_queue: asyncio.Queue) -> 
             task_name = f"{device_identifier[0].attr}:{device_identifier[1]},{object_identifier[0].attr}:{object_identifier[1]}"
 
             for task in app.subscription_tasks:
-                if task_name in task.get_name():
+                if (
+                    task_name in task.get_name()
+                    and not task.done()
+                    and not task.cancelling()
+                ):
                     webAPI.diagnostic_counters["duplicate_subscribe_requests"] += 1
-                    LOGGER.error(
+                    LOGGER.debug(
                         f"Subscription for {device_identifier}, {object_identifier} already exists"
                     )
                     break
@@ -199,13 +203,18 @@ async def unsubscribe_handler_task(
             object_identifier = queue_result[1]
 
             task_name = f"{device_identifier[0].attr}:{device_identifier[1]},{object_identifier[0].attr}:{object_identifier[1]}"
+            target = app._target_key(device_identifier, object_identifier)
+            app._cancel_target_runtime(target)
+            status = app.target_status.get(target)
+            if status:
+                status["state"] = "cancelled"
 
             for task in app.subscription_tasks:
                 if task_name in task.get_name():
                     task.cancel()
                     break
             else:
-                LOGGER.error("Subscription task does not exist")
+                LOGGER.debug("Subscription task does not exist")
 
     except asyncio.CancelledError as err:
         LOGGER.warning(f"Unsubscribe task cancelled: {err}")
@@ -360,8 +369,14 @@ async def main():
         ttl=int(foreign_ttl),
         update_event=webAPI.events.val_updated_event,
         addon_device_config=options.get("devices_setup"),
-        subscription_mode=options.get("subscription_mode", "legacy"),
+        subscription_mode=options.get("subscription_mode", "managed_polling"),
         managed_poll_rate=options.get("managed_poll_rate", 10),
+        managed_cov_subscription_delay=options.get(
+            "managed_cov_subscription_delay", 1
+        ),
+        managed_cov_fallback_timeout=options.get(
+            "managed_cov_fallback_timeout", 30
+        ),
     )
 
     app.asap.maxApduLengthAccepted = int(max_apdu)

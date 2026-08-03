@@ -7,10 +7,15 @@ BACnet/IP** bereit. Das Add-on erkennt BACnet-Geräte, liest deren Objekte und
 Werte, verwaltet COV-Abonnements beziehungsweise Polling und stellt die Daten der
 Home-Assistant-Integration zur Verfügung.
 
+Neue Installationen starten bewusst mit verwaltetem Polling. Optionales COV wird
+je BACnet-Gerät begrenzt und gedrosselt aufgebaut. Bleiben trotz bestätigter
+Anmeldung Werte aus, wechselt das betroffene Objekt automatisch auf Polling.
+
 ## Das bringt das Add-on mit
 
 - automatische Erkennung von BACnet/IP-Geräten und Objekten
-- verwaltete COV-Abonnements mit kontrolliertem Polling als Alternative
+- begrenzte, gedrosselte COV-Abonnements mit automatischem Polling-Fallback
+- Zielstatus mit COV-Bestätigung, letzter COV-Nachricht, letztem Poll und Wertealter
 - geprüfter Inventar-Cache für einen robusten Neustart
 - Lesen und Schreiben von BACnet-Werten einschließlich Schreibpriorität
 - Betrieb als normales BACnet/IP-Gerät oder als Foreign Device an einem BBMD

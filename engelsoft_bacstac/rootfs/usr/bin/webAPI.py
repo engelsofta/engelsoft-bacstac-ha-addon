@@ -215,7 +215,15 @@ async def subscriptions(request: Request):
 
     return templates.TemplateResponse(
         "subscriptions.html",
-        {"request": request, "subs": sub_list},
+        {
+            "request": request,
+            "subs": sub_list,
+            "targets": (
+                bacnet_application.target_status_snapshot()
+                if bacnet_application is not None
+                else []
+            ),
+        },
     )
 
 
@@ -269,6 +277,9 @@ async def get_subscription_diagnostics():
         "managed_targets": len(getattr(application, "managed_targets", [])),
         "managed_poll_targets": len(getattr(application, "managed_poll_targets", [])),
         "managed_cov_targets": len(getattr(application, "managed_cov_task_names", [])),
+        "target_status": (
+            application.target_status_snapshot() if application is not None else []
+        ),
         "active_managed_poll_tasks": sum(
             not task.done()
             for task in getattr(application, "managed_poll_tasks", {}).values()
