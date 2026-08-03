@@ -369,6 +369,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                 "requested_mode": requested_mode or self.subscription_mode,
                 "state": "waiting",
                 "subscription_confirmed_at": None,
+                "subscription_confirmed_current": False,
                 "last_cov_at": None,
                 "last_poll_at": None,
                 "last_value_at": None,
@@ -411,6 +412,9 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
             )
             status["cov_task_name"] = active_task_name
             status["subscription_confirmed"] = bool(
+                status.get("subscription_confirmed_current")
+            )
+            status["subscription_ever_confirmed"] = bool(
                 status.get("subscription_confirmed_at")
             )
             for field in (
@@ -506,6 +510,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         status["fallback_active"] = True
         status["fallback_reason"] = "cov_silent"
         status["state"] = "polling_fallback"
+        status["subscription_confirmed_current"] = False
         status["last_error"] = "Polled value changed without a COV notification"
         self.managed_poll_targets.add(target)
         self.subscription_diagnostics["cov_silence_fallbacks"] += 1
@@ -2224,7 +2229,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         target = self._target_key(device_identifier, object_identifier)
         status = self._ensure_target_status(target, self.subscription_mode)
         status["state"] = "subscribing"
-        status["subscription_confirmed_at"] = None
+        status["subscription_confirmed_current"] = False
         status["last_error"] = None
 
         unsubscribe_cov_request = None
@@ -2238,6 +2243,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                 lifetime=lifetime,
             ) as subscription:
                 status["subscription_confirmed_at"] = time.time()
+                status["subscription_confirmed_current"] = True
                 status["state"] = "cov_waiting"
                 old_watchdog = self.cov_watchdog_tasks.pop(target, None)
                 if old_watchdog is not None and not old_watchdog.done():

@@ -14,6 +14,14 @@
     'cov_silent': 'Keine COV-Werte',
     'cov_failed': 'COV fehlgeschlagen'
 } %}
+{% set cov_summary = namespace(expected=0, confirmed=0) %}
+{% for target in targets %}
+    {% if target.requested_mode == 'cov' %}
+        {% set cov_summary.expected = cov_summary.expected + 1 %}
+        {% if target.subscription_ever_confirmed %}{% set cov_summary.confirmed = cov_summary.confirmed + 1 %}{% endif %}
+    {% endif %}
+{% endfor %}
+<span data-target-summary hidden><span data-summary-confirmed>{{ cov_summary.confirmed }}</span><span data-summary-expected>{{ cov_summary.expected }}</span></span>
 {% for target in targets %}
 <div class="target-status-grid target-status-row" data-target-row data-target-key="{{ target.device_id }}/{{ target.object_id }}" data-state="{{ target.state }}" data-fallback="{{ 'true' if target.fallback_active else 'false' }}" data-cov-requested="{{ 'true' if target.requested_mode == 'cov' else 'false' }}" data-cov-confirmed="{{ 'true' if target.cov_task_active and target.subscription_confirmed else 'false' }}" data-search="{{ target.device_id }} {{ target.object_id }} {{ target.state }} {{ target.fallback_reason or '' }}" data-sort-target="{{ target.device_id }}/{{ target.object_id }}" data-sort-state="{{ target.state }}" data-sort-cov="{{ 2 if target.cov_task_active and target.subscription_confirmed else 1 if target.cov_task_active else 0 }}" data-sort-last-cov="{{ target.last_cov_age_seconds if target.last_cov_age_seconds is not none else 'null' }}" data-sort-last-poll="{{ target.last_poll_age_seconds if target.last_poll_age_seconds is not none else 'null' }}" data-sort-value-age="{{ target.last_value_age_seconds if target.last_value_age_seconds is not none else 'null' }}"{% if target.state in ['disabled', 'cancelled'] %} hidden{% endif %}>
     <span class="target-identity">
@@ -29,7 +37,7 @@
         {% if target.cov_task_active %}
             <strong class="status-badge status-cov_active">COV aktiv</strong>
             <small>{{ "Bestätigt" if target.subscription_confirmed else "Anmeldung läuft" }} · {{ "Confirmed" if target.cov_confirmation == "confirmed" else "Unconfirmed" }}</small>
-        {% elif target.subscription_confirmed %}
+        {% elif target.subscription_ever_confirmed %}
             <strong class="status-badge status-cancelled">Beendet</strong>
             <small>war bestätigt</small>
         {% else %}

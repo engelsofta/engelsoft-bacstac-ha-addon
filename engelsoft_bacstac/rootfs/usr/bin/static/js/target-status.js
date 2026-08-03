@@ -13,12 +13,11 @@
 
   const updateSummaries = () => {
     const requestedCov = rows.filter((row) => row.dataset.covRequested === "true");
-    // data-sort-cov already drives the visible COV column: 2 means an active,
-    // acknowledged subscription. Reusing it keeps the counter identical to
-    // what the row itself displays, including in Home Assistant WebViews.
-    const confirmedCov = requestedCov.filter((row) => Number(row.dataset.sortCov) === 2);
+    const summary = rowsContainer.querySelector("[data-target-summary]");
+    const expectedCov = summary?.querySelector("[data-summary-expected]")?.textContent ?? String(requestedCov.length);
+    const confirmedCov = summary?.querySelector("[data-summary-confirmed]")?.textContent ?? "0";
     const selectedCov = document.querySelectorAll("[data-subscription-checkbox]:checked").length;
-    if (confirmedCount) confirmedCount.textContent = `${confirmedCov.length} von ${requestedCov.length}`;
+    if (confirmedCount) confirmedCount.textContent = `${confirmedCov} von ${expectedCov}`;
     if (selectedCount) selectedCount.textContent = String(selectedCov);
     if (removeButton) removeButton.disabled = selectedCov === 0;
   };

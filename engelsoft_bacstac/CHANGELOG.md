@@ -2,6 +2,13 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.2.9
+03/08/2026
+
+## Fixed
+- Made the COV progress counter monotonic for a stable target list: the right side is the complete number of COV targets requested by the integration, while the left side counts targets confirmed at least once since add-on startup.
+- Moved COV progress aggregation into the server-rendered live status response instead of deriving it from transient browser task rows.
+
 # 1.2.8
 03/08/2026
 
