@@ -257,6 +257,22 @@ async def subscriptions(request: Request):
     )
 
 
+@app.get("/subscriptions/targets", response_class=HTMLResponse, tags=["Webpages"])
+async def subscription_targets(request: Request):
+    """Return the live target rows without reloading the complete page."""
+    return templates.TemplateResponse(
+        "target_rows.html",
+        {
+            "request": request,
+            "targets": (
+                bacnet_application.target_status_snapshot()
+                if bacnet_application is not None
+                else []
+            ),
+        },
+    )
+
+
 @app.get("/ede", response_class=HTMLResponse, tags=["Webpages"])
 async def ede(request: Request):
     """Page to see EDE files uploaded."""

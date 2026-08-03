@@ -1,11 +1,11 @@
 // Created by engelsofta in 2026 for the modified Engelsoft BACstac distribution.
 (() => {
   const input = document.getElementById("target-filter");
-  const rows = Array.from(document.querySelectorAll("[data-target-row]"));
+  let rows = Array.from(document.querySelectorAll("[data-target-row]"));
   const count = document.getElementById("visible-target-count");
   const buttons = Array.from(document.querySelectorAll("[data-target-filter]"));
   const sortButtons = Array.from(document.querySelectorAll("[data-sort]"));
-  const table = document.querySelector(".target-status-table");
+  const rowsContainer = document.getElementById("target-status-rows");
   if (!input || !count) return;
 
   let selected = "active";
@@ -56,7 +56,7 @@
       }
       return collator.compare(leftValue, rightValue) * direction;
     });
-    rows.forEach((row) => table.appendChild(row));
+    rows.forEach((row) => rowsContainer.appendChild(row));
   }
 
   sortButtons.forEach((button) => {
@@ -72,4 +72,34 @@
       sortRows(sortKey, sortDirection);
     });
   });
+
+  let refreshRunning = false;
+  async function refreshRows() {
+    if (refreshRunning || document.hidden) return;
+    refreshRunning = true;
+    try {
+      const selectedTasks = new Set(
+        Array.from(document.querySelectorAll("[data-subscription-checkbox]:checked"), (checkbox) => checkbox.value),
+      );
+      const response = await fetch("./subscriptions/targets", { cache: "no-store" });
+      if (!response.ok) return;
+      rowsContainer.innerHTML = await response.text();
+      rows = Array.from(rowsContainer.querySelectorAll("[data-target-row]"));
+      rowsContainer.querySelectorAll("[data-subscription-checkbox]").forEach((checkbox) => {
+        checkbox.checked = selectedTasks.has(checkbox.value);
+      });
+      document.querySelectorAll(".target-count").forEach((node) => {
+        node.textContent = String(rows.length);
+      });
+      sortRows(sortKey, sortDirection);
+      apply();
+    } catch (_error) {
+      // Retry quietly on the next interval while the add-on is busy or restarting.
+    } finally {
+      refreshRunning = false;
+    }
+  }
+
+  // Five seconds keeps the large status table current without creating needless UI load.
+  window.setInterval(refreshRows, 5000);
 })();

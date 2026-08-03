@@ -375,6 +375,7 @@ th { position: sticky; top: 0; color: var(--muted); background: var(--surface-2)
   scrollbar-color: var(--scrollbar) transparent;
 }
 .target-status-table { min-width: 800px; }
+#target-status-rows { display: contents; }
 .target-status-grid {
   display: grid;
   grid-template-columns: minmax(180px, 1.35fr) minmax(145px, 1fr) repeat(4, minmax(100px, .7fr));

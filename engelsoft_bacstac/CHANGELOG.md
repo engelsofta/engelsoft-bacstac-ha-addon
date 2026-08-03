@@ -13,6 +13,7 @@
 - Merged the separate active-COV task list into the main target status table.
 - Added clear COV-active and Confirmed/Unconfirmed indicators plus in-row selection for manual removal.
 - Made every target table column sortable with natural object ordering and numeric age sorting.
+- Added automatic target-status updates while the page is open, preserving the selected filter, sort order and checked COV tasks.
 
 # 1.2.2
 03/08/2026

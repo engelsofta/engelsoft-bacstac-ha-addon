@@ -13,3 +13,4 @@ Aktualisierungssteuerung.
 - Zielstatus und aktive COV-Tasks wurden zu einer einzigen Tabelle zusammengeführt.
 - Aktives COV sowie Confirmed oder Unconfirmed sind direkt in der COV-Spalte sichtbar.
 - Alle Spalten lassen sich per Klick sortieren; Zeitspalten werden numerisch sortiert.
+- Die Tabelle aktualisiert ihren Status automatisch, ohne Filter, Sortierung oder markierte COV-Tasks zurückzusetzen.
