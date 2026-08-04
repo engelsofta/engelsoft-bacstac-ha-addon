@@ -571,7 +571,9 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         if existing is not None and not existing.done():
             return
 
-        status = self._ensure_target_status(target, self.subscription_mode)
+        # A COV helper must not replace the per-target mode selected by the
+        # integration with the global mode (for example integration_controlled).
+        status = self._ensure_target_status(target)
         status["cov_verification_active"] = True
         status["cov_verification_value_set"] = False
         status["cov_verification_value"] = None
@@ -608,7 +610,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
     ) -> None:
         target = self._target_key(device_identifier, object_identifier)
         existing = self.cov_fallback_tasks.get(target)
-        status = self._ensure_target_status(target, self.subscription_mode)
+        status = self._ensure_target_status(target)
         if existing is not None and not existing.done():
             if status.get("cov_verification_active"):
                 if reason == "cov_silent":
@@ -2204,7 +2206,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
 
         task_name = f"{device_identifier[0].attr}:{device_identifier[1]},{object_identifier[0].attr}:{object_identifier[1]},{notifications}"
         target = self._target_key(device_identifier, object_identifier)
-        self._ensure_target_status(target, self.subscription_mode)
+        self._ensure_target_status(target)
         if any(
             task.get_name() == task_name
             and not task.done()
@@ -2227,7 +2229,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         cov_limit = self._cov_limit_for_device(device_identifier)
         if active_for_device >= cov_limit:
             target = self._target_key(device_identifier, object_identifier)
-            status = self._ensure_target_status(target, self.subscription_mode)
+            status = self._ensure_target_status(target)
             status["state"] = "polling_fallback"
             status["last_error"] = f"COV limit {cov_limit} reached"
             await self._ensure_cov_polling_fallback(
@@ -2280,7 +2282,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
 
         task_name = f"{device_identifier[0].attr}:{device_identifier[1]},{object_identifier[0].attr}:{object_identifier[1]},{notifications}"
         target = self._target_key(device_identifier, object_identifier)
-        status = self._ensure_target_status(target, self.subscription_mode)
+        status = self._ensure_target_status(target)
         status["state"] = "subscribing"
         status["subscription_confirmed_current"] = False
         status["last_error"] = None

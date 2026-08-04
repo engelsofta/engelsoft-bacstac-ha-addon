@@ -2,6 +2,12 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.2.10
+04/08/2026
+
+## Fixed
+- Kept each integration target's requested COV mode intact while its subscription, verification poll or polling fallback is created. This prevents the expected COV total from counting backwards during initialization.
+
 # 1.2.9
 03/08/2026
 
