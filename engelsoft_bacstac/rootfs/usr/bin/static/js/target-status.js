@@ -32,7 +32,7 @@
         selected === "all" ||
         (selected === "active" && state !== "disabled" && state !== "cancelled") ||
         (selected === "cov" && state.startsWith("cov")) ||
-        (selected === "polling" && state === "polling") ||
+        (selected === "polling" && state.startsWith("polling")) ||
         (selected === "fallback" && row.dataset.fallback === "true") ||
         (selected === "disabled" && state === "disabled");
       const matchesText = !query || (row.dataset.search || "").toLocaleLowerCase().includes(query);

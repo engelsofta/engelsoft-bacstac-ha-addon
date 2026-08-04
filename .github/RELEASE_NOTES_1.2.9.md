@@ -14,3 +14,9 @@ Der Abstand zwischen COV-Anmeldungen wird nun in Millisekunden eingestellt.
 `1000 ms` entsprechen dem bisherigen Standard von einer Sekunde; beispielsweise
 ermöglichen `250 ms` vier Anmeldeversuche pro Sekunde. Bestehende Sekundenwerte
 bleiben als Fallback kompatibel.
+
+Der Polling-Worker ist jetzt gegen einzelne fehlerhafte BACnet-Punkte und
+Zeitüberschreitungen abgesichert. Er arbeitet nach einem Fehler weiter, erholt
+sich automatisch von unerwarteten Zyklusfehlern und zeigt betroffene Ziele als
+„Polling gestört“ samt letzter Ursache. Zusätzliche Diagnosewerte dokumentieren
+Zyklusdauer, Lesefehler und Wiederherstellungen.

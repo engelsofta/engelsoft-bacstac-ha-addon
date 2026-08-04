@@ -165,6 +165,12 @@ understand how command prioritization affects the target BACnet controller.
 
 The **Subscriptions** page shows the state of every managed target, when its COV subscription was confirmed, the last COV notification, the last poll and the age of its current value.
 
+Managed polling schedules cycle starts at `managed_poll_rate`. Each BACnet read
+has a bounded timeout and a failed object does not stop the remaining cycle.
+The Subscriptions page marks the affected target as **Polling disturbed** until
+a later read succeeds. With many or slow targets, a cycle can still take longer
+than the requested interval; the diagnostics report its actual duration.
+
 In `integration_controlled` mode the integration can send an `update_mode` with
 each target to `POST /apiv1/managed/targets`:
 

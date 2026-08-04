@@ -8,9 +8,14 @@
 ## Fixed
 - Made the COV progress counter monotonic for a stable target list: the right side is the complete number of COV targets requested by the integration, while the left side counts targets confirmed at least once since add-on startup.
 - Moved COV progress aggregation into the server-rendered live status response instead of deriving it from transient browser task rows.
+- Prevented a timeout or unexpected read error for one BACnet object from terminating the complete polling worker.
+- Added a bounded timeout to every poll request and made the worker recover automatically from unexpected cycle-level failures.
+- Scheduled polling by cycle start instead of adding the configured interval after the full cycle duration.
 
 ## Improved
 - Changed the primary COV subscription pacing option to milliseconds so values below one second are possible, while retaining the old seconds option as a backward-compatible fallback.
+- Added polling health diagnostics for completed cycles, failed reads, worker recoveries and the latest cycle duration.
+- Added a visible `Polling gestört` target state with the most recent per-object error; a successful read clears it automatically.
 
 # 1.2.8
 03/08/2026

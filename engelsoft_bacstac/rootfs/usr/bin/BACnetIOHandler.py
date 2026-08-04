@@ -112,6 +112,10 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
             "managed_target_updates": 0,
             "cov_limit_fallbacks": 0,
             "cov_silence_fallbacks": 0,
+            "poll_cycles_completed": 0,
+            "poll_read_failures": 0,
+            "poll_worker_recoveries": 0,
+            "last_poll_cycle_seconds": None,
         }
         self.vendor_info = get_vendor_info(0)
         asyncio.get_event_loop().create_task(self.IAm_handler())
@@ -126,6 +130,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         self.managed_cov_fallback_timeout = max(
             10, int(managed_cov_fallback_timeout)
         )
+        self.managed_poll_request_timeout = 15
         self.managed_poll_tasks: dict[str, asyncio.Task] = {}
         self.managed_poll_targets: set[tuple[str, str]] = set()
         self.managed_cov_task_names: set[str] = set()
@@ -372,6 +377,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                 "subscription_confirmed_current": False,
                 "last_cov_at": None,
                 "last_poll_at": None,
+                "last_poll_attempt_at": None,
                 "last_value_at": None,
                 "fallback_active": False,
                 "fallback_reason": None,
@@ -421,6 +427,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                 "subscription_confirmed_at",
                 "last_cov_at",
                 "last_poll_at",
+                "last_poll_attempt_at",
                 "last_value_at",
             ):
                 timestamp = status.get(field)
@@ -447,6 +454,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
             status["state"] = "cov_active"
             self._cancel_cov_fallback(target)
         elif source == "poll":
+            status["last_poll_attempt_at"] = now
             status["last_poll_at"] = now
             if status.get("cov_verification_active"):
                 if not status.get("cov_verification_value_set"):
@@ -475,6 +483,27 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                 )
             else:
                 status["state"] = "polling"
+
+    def _mark_target_poll_error(
+        self,
+        device_identifier: ObjectIdentifier,
+        object_identifier: ObjectIdentifier,
+        error: str,
+    ) -> None:
+        """Record one failed read without terminating the device poll worker."""
+        target = self._target_key(device_identifier, object_identifier)
+        # Keep the requested mode intact: this can also be a verification poll
+        # or the polling fallback of a COV target.
+        status = self._ensure_target_status(target)
+        repeated = status.get("state") == "polling_error" and status.get(
+            "last_error"
+        ) == error
+        status["last_poll_attempt_at"] = time.time()
+        status["state"] = "polling_error"
+        status["last_error"] = error
+        self.subscription_diagnostics["poll_read_failures"] += 1
+        log_method = LOGGER.debug if repeated else LOGGER.warning
+        log_method("Polling failed for %s %s: %s", target[0], target[1], error)
 
     def _cancel_cov_fallback(self, target: tuple[str, str]) -> None:
         self.cov_fallback_tasks.pop(target, None)
@@ -879,75 +908,67 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
     ) -> None:
         LOGGER.debug(f"TASK: {device_identifier} {object_list} {device_identifier}")
         properties = property_list or object_properties_to_read_periodically
+        device_key = self.identifier_to_string(device_identifier)
 
-        try:
-            services_supported = self.bacnet_device_dict[
-                f"device:{device_identifier[1]}"
-            ][f"device:{device_identifier[1]}"].get(
-                "protocolServicesSupported", ServicesSupported()
-            )
+        while True:
+            cycle_started = time.monotonic()
+            try:
+                services_supported = self.bacnet_device_dict.get(device_key, {}).get(
+                    device_key, {}
+                ).get("protocolServicesSupported", ServicesSupported())
 
-            while True:
-                for object_identifier in object_list:
+                # The list can be shared with a grouped fallback worker and may
+                # change when COV starts or stops. Iterate over a stable snapshot.
+                for object_identifier in list(object_list):
                     object_class = self.vendor_info.get_object_class(
                         object_identifier[0]
                     )
 
                     if object_class is None:
-                        LOGGER.warning(
-                            f"Object type is unknown: {device_identifier}, {object_identifier}"
+                        self._mark_target_poll_error(
+                            device_identifier,
+                            object_identifier,
+                            "Unknown BACnet object type",
                         )
                         continue
 
-                    if services_supported["read-property-multiple"] == 1:
-                        try:
-                            response = await self.read_property_multiple(
-                                address=self.dev_to_addr(device_identifier),
-                                parameter_list=[
-                                    object_identifier,
-                                    properties,
-                                ],
+                    try:
+                        if services_supported["read-property-multiple"] == 1:
+                            response = await asyncio.wait_for(
+                                self.read_property_multiple(
+                                    address=self.dev_to_addr(device_identifier),
+                                    parameter_list=[object_identifier, properties],
+                                ),
+                                timeout=self.managed_poll_request_timeout,
                             )
-                        except ErrorRejectAbortNack as err:
-                            LOGGER.error(
-                                f"Read multiple error: {device_identifier} {object_identifier}: {err}"
-                            )
-                            continue
-                        else:
                             for (
-                                object_identifier,
+                                response_object_identifier,
                                 property_identifier,
                                 property_array_index,
                                 property_value,
                             ) in response:
-                                if property_value is not ErrorType:
+                                if not isinstance(property_value, ErrorType):
                                     self.dict_updater(
                                         device_identifier=device_identifier,
-                                        object_identifier=object_identifier,
+                                        object_identifier=response_object_identifier,
                                         property_identifier=property_identifier,
                                         property_value=property_value,
                                         update_source="poll",
                                     )
-                    else:
-                        for property_id in properties:
-                            property_class = object_class.get_property_type(property_id)
-
-                            if property_class is None:
-                                continue
-
-                            try:
-                                response = await self.read_property(
-                                    address=self.dev_to_addr(device_identifier),
-                                    objid=object_identifier,
-                                    prop=property_id,
+                        else:
+                            for property_id in properties:
+                                property_class = object_class.get_property_type(property_id)
+                                if property_class is None:
+                                    continue
+                                response = await asyncio.wait_for(
+                                    self.read_property(
+                                        address=self.dev_to_addr(device_identifier),
+                                        objid=object_identifier,
+                                        prop=property_id,
+                                    ),
+                                    timeout=self.managed_poll_request_timeout,
                                 )
-                            except ErrorRejectAbortNack as err:
-                                LOGGER.error(
-                                    f"Read error: {device_identifier} {object_identifier} {property_id}: {err}"
-                                )
-                                continue
-                            else:
-                                if response is not ErrorType:
+                                if not isinstance(response, ErrorType):
                                     self.dict_updater(
                                         device_identifier=device_identifier,
                                         object_identifier=object_identifier,
@@ -955,14 +976,46 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                                         property_value=response,
                                         update_source="poll",
                                     )
+                    except asyncio.CancelledError:
+                        raise
+                    except asyncio.TimeoutError:
+                        self._mark_target_poll_error(
+                            device_identifier,
+                            object_identifier,
+                            f"BACnet read timed out after {self.managed_poll_request_timeout} s",
+                        )
+                    except Exception as err:
+                        self._mark_target_poll_error(
+                            device_identifier,
+                            object_identifier,
+                            f"{type(err).__name__}: {err}",
+                        )
 
-                await asyncio.sleep(poll_rate)
+                cycle_seconds = time.monotonic() - cycle_started
+                self.subscription_diagnostics["poll_cycles_completed"] += 1
+                self.subscription_diagnostics["last_poll_cycle_seconds"] = round(
+                    cycle_seconds, 3
+                )
+            except asyncio.CancelledError:
+                LOGGER.info("Poll task for %s cancelled", device_identifier)
+                return
+            except Exception as err:
+                self.subscription_diagnostics["poll_worker_recoveries"] += 1
+                LOGGER.error(
+                    "Polling worker for %s recovered from an unexpected error: %s",
+                    device_identifier,
+                    err,
+                    exc_info=True,
+                )
+                for object_identifier in list(object_list):
+                    self._mark_target_poll_error(
+                        device_identifier,
+                        object_identifier,
+                        f"Worker recovered from {type(err).__name__}: {err}",
+                    )
 
-        except asyncio.CancelledError as err:
-            LOGGER.info(f"Poll task for {device_identifier} cancelled")
-
-        except Exception as err:
-            LOGGER.error(err)
+            elapsed = time.monotonic() - cycle_started
+            await asyncio.sleep(max(0.1, float(poll_rate) - elapsed))
 
     async def replace_managed_targets(self, targets: list[tuple]) -> dict:
         """Apply integration targets while retaining BACnet safety guardrails."""
