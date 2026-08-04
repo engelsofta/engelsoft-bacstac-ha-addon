@@ -131,6 +131,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
             "poll_cycles_completed": 0,
             "poll_read_failures": 0,
             "poll_worker_recoveries": 0,
+            "poll_address_waits": 0,
             "last_poll_cycle_seconds": None,
         }
         self.vendor_info = get_vendor_info(0)
@@ -147,6 +148,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
             10, int(managed_cov_fallback_timeout)
         )
         self.managed_poll_request_timeout = 15
+        self.poll_discovery_requests: dict[str, float] = {}
         self.managed_poll_tasks: dict[str, asyncio.Task] = {}
         self.managed_poll_targets: set[tuple[str, str]] = set()
         self.managed_cov_task_names: set[str] = set()
@@ -520,6 +522,17 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         self.subscription_diagnostics["poll_read_failures"] += 1
         log_method = LOGGER.debug if repeated else LOGGER.warning
         log_method("Polling failed for %s %s: %s", target[0], target[1], error)
+
+    def _mark_target_poll_waiting(
+        self,
+        device_identifier: ObjectIdentifier,
+        object_identifier: ObjectIdentifier,
+    ) -> None:
+        """Show that cached targets are waiting for a live BACnet address."""
+        target = self._target_key(device_identifier, object_identifier)
+        status = self._ensure_target_status(target)
+        status["state"] = "polling_waiting"
+        status["last_error"] = "Warte auf BACnet-Geräteadresse"
 
     def _cancel_cov_fallback(self, target: tuple[str, str]) -> None:
         self.cov_fallback_tasks.pop(target, None)
@@ -931,6 +944,27 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         while True:
             cycle_started = time.monotonic()
             try:
+                device_address = self.dev_to_addr(device_identifier)
+                if device_address is None:
+                    now = time.monotonic()
+                    last_request = self.poll_discovery_requests.get(device_key, 0.0)
+                    if now - last_request >= 30.0:
+                        self.poll_discovery_requests[device_key] = now
+                        self.subscription_diagnostics["poll_address_waits"] += 1
+                        self.who_is(device_identifier[1], device_identifier[1])
+                        LOGGER.warning(
+                            "Polling for %s is waiting for its live BACnet address",
+                            device_key,
+                        )
+                    for object_identifier in list(object_list):
+                        self._mark_target_poll_waiting(
+                            device_identifier,
+                            object_identifier,
+                        )
+                    elapsed = time.monotonic() - cycle_started
+                    await asyncio.sleep(max(0.1, float(poll_rate) - elapsed))
+                    continue
+
                 services_supported = self.bacnet_device_dict.get(device_key, {}).get(
                     device_key, {}
                 ).get("protocolServicesSupported", ServicesSupported())
@@ -954,7 +988,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                         if supports_read_property_multiple(services_supported):
                             response = await asyncio.wait_for(
                                 self.read_property_multiple(
-                                    address=self.dev_to_addr(device_identifier),
+                                    address=device_address,
                                     parameter_list=[object_identifier, properties],
                                 ),
                                 timeout=self.managed_poll_request_timeout,
@@ -980,7 +1014,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                                     continue
                                 response = await asyncio.wait_for(
                                     self.read_property(
-                                        address=self.dev_to_addr(device_identifier),
+                                        address=device_address,
                                         objid=object_identifier,
                                         prop=property_id,
                                     ),

@@ -4,6 +4,7 @@
     'cov_waiting': 'Wartet auf COV',
     'subscribing': 'COV-Anmeldung',
     'polling': 'Polling',
+    'polling_waiting': 'Wartet auf Gerät',
     'polling_error': 'Polling gestört',
     'polling_fallback': 'Polling-Fallback',
     'disabled': 'Deaktiviert',
@@ -34,6 +35,7 @@
         {% if target.fallback_active %}<small>Grund: {{ fallback_labels.get(target.fallback_reason, target.fallback_reason) }}</small>{% endif %}
         {% if target.cov_verification_active %}<small>Kontroll-Poll aktiv</small>{% endif %}
         {% if target.state == 'polling_error' and target.last_error %}<small>Fehler: {{ target.last_error }}</small>{% endif %}
+        {% if target.state == 'polling_waiting' and target.last_error %}<small>{{ target.last_error }}</small>{% endif %}
     </span>
     <span class="cov-cell">
         {% if target.cov_task_active %}

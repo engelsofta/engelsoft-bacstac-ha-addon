@@ -473,6 +473,7 @@ th { position: sticky; top: 0; color: var(--muted); background: var(--surface-2)
 }
 .status-cov_active, .status-cov_waiting { color: #91b878; border-color: rgba(112,157,85,.45); background: rgba(112,157,85,.12); }
 .status-polling { color: #7da9d6; border-color: rgba(78,128,179,.45); background: rgba(78,128,179,.12); }
+.status-polling_waiting { color: #d6a558; border-color: rgba(190,134,52,.5); background: rgba(190,134,52,.12); }
 .status-polling_error { color: #df866f; border-color: rgba(207,90,67,.5); background: rgba(207,90,67,.12); }
 .status-polling_fallback { color: #d6a558; border-color: rgba(190,134,52,.5); background: rgba(190,134,52,.12); }
 .status-disabled, .status-cancelled { color: var(--muted); opacity: .78; }

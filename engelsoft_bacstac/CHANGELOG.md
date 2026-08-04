@@ -2,6 +2,16 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.2.11
+04/08/2026
+
+## Fixed
+- Delayed managed polling for inventory-cache targets until the BACnet device has supplied a live network address. This prevents empty `AssertionError` failures when the integration sends its targets before the first I-Am response.
+- Throttled targeted Who-Is retries to once every 30 seconds while a device address is unavailable.
+
+## Improved
+- Added a visible `Wartet auf Gerät` state and a diagnostic counter for address waits.
+
 # 1.2.10
 04/08/2026
 
