@@ -17,7 +17,7 @@ from typing import TypeVar
 import psutil
 import uvicorn
 import webAPI
-from BACnetIOHandler import BACnetIOHandler
+from BACnetIOHandler import BACnetIOHandler, supports_read_property_multiple
 from bacpypes3.apdu import AbortPDU, ErrorPDU, RejectPDU
 from bacpypes3.basetypes import (Null, ObjectType, Segmentation,
                                  ServicesSupported)
@@ -80,7 +80,7 @@ async def updater_task(app: Application, interval: int, event: asyncio.Event) ->
                 services_supported = app.bacnet_device_dict[device_id][device_id].get(
                     "protocolServicesSupported", ServicesSupported()
                 )
-                if services_supported["read-property-multiple"] == 1:
+                if supports_read_property_multiple(services_supported):
                     await app.read_multiple_objects_periodically(
                         device_identifier=device_id
                     )

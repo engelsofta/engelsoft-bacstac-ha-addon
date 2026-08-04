@@ -7,6 +7,7 @@
 
 ## Fixed
 - Kept each integration target's requested COV mode intact while its subscription, verification poll or polling fallback is created. This prevents the expected COV total from counting backwards during initialization.
+- Accepted both live BACpypes service bit strings and list-based service capabilities restored from the inventory cache. Cached devices no longer fail polling with `TypeError: list indices must be integers or slices, not str`.
 
 # 1.2.9
 03/08/2026

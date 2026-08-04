@@ -39,6 +39,22 @@ from inventory_cache import InventoryCache
 KeyType = TypeVar("KeyType")
 _debug = 0
 _DISCOVERY_READ_CONCURRENCY = 3
+_READ_PROPERTY_MULTIPLE_SERVICE_BIT = 14
+
+
+def supports_read_property_multiple(services_supported: Any) -> bool:
+    """Read the RPM capability from BACpypes objects or cached JSON lists."""
+    try:
+        value = services_supported["read-property-multiple"]
+    except (KeyError, IndexError, TypeError):
+        try:
+            value = services_supported[_READ_PROPERTY_MULTIPLE_SERVICE_BIT]
+        except (KeyError, IndexError, TypeError):
+            return False
+
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "on"}
+    return bool(value)
 
 
 def custom_init(
@@ -935,7 +951,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                         continue
 
                     try:
-                        if services_supported["read-property-multiple"] == 1:
+                        if supports_read_property_multiple(services_supported):
                             response = await asyncio.wait_for(
                                 self.read_property_multiple(
                                     address=self.dev_to_addr(device_identifier),
@@ -1588,7 +1604,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                     f"device:{device_id}"
                 ].get("protocolServicesSupported", ServicesSupported())
 
-                if services_supported["read-property-multiple"] == 1:
+                if supports_read_property_multiple(services_supported):
                     inventory_read_success = await self.read_multiple_objects(
                         device_identifier=apdu.iAmDeviceIdentifier
                     )
