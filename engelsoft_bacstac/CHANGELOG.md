@@ -2,6 +2,16 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.2.13
+05/08/2026
+
+## Fixed
+- Logged an unsupported `ReadPropertyMultiple` service as the expected single-property discovery fallback instead of an error.
+- Treated `unknown-property` responses for optional device metadata as capability differences and remembered them for the current add-on runtime.
+
+## Improved
+- Added a diagnostic counter for unsupported optional device properties while keeping genuine communication failures visible.
+
 # 1.2.12
 05/08/2026
 

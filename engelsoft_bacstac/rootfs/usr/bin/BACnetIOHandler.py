@@ -142,6 +142,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
             "discovery_property_lists": 0,
             "discovery_property_list_fallbacks": 0,
             "discovery_backoffs": 0,
+            "discovery_unsupported_device_properties": 0,
         }
         self.vendor_info = get_vendor_info(0)
         asyncio.get_event_loop().create_task(self.IAm_handler())
@@ -178,6 +179,9 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
             _DISCOVERY_READ_CONCURRENCY
         )
         self.discovery_backoff_until: dict[str, float] = {}
+        # Changed by Engelsoft: remember optional device properties rejected by
+        # a station so repeated I-Am discovery does not ask for them again.
+        self.unsupported_device_properties: dict[str, set[str]] = {}
         self.inventory_cache = InventoryCache()
         self.inventory_cache_diagnostics = {
             "restored_devices": 0,
@@ -1943,16 +1947,25 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
             )
 
         except ErrorRejectAbortNack as err:
+            error_text = str(err)
+            if (
+                "segmentation-not-supported" in error_text
+                or "unrecognized-service" in error_text
+            ):
+                LOGGER.info(
+                    "ReadPropertyMultiple unavailable for %s; using paced single-property discovery",
+                    device_identifier,
+                )
+                return await self.read_device_props(apdu)
+            if "no-response" in error_text:
+                LOGGER.error(
+                    "No response while reading device properties from %s: %s",
+                    device_identifier,
+                    err,
+                )
+                return False
             LOGGER.error(f"Error reading device props: {device_identifier}: {err}")
-
-            if "segmentation-not-supported" in str(err):
-                return await self.read_device_props(apdu)
-            elif "unrecognized-service" in str(err):
-                return await self.read_device_props(apdu)
-            elif "no-response" in str(err):
-                return False
-            else:
-                return False
+            return False
 
         except AttributeError as err:
             LOGGER.error(
@@ -1979,6 +1992,10 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
     async def read_device_props(self, apdu):
         address = apdu.pduSource
         device_identifier = apdu.iAmDeviceIdentifier
+        device_key = self.identifier_to_string(ObjectIdentifier(device_identifier))
+        unsupported_properties = self.unsupported_device_properties.setdefault(
+            device_key, set()
+        )
 
         LOGGER.debug(f"Reading device properties of {device_identifier} one by one.")
 
@@ -1986,18 +2003,49 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
             if property_id == PropertyIdentifier("objectList"):
                 continue
 
+            property_key = self._normalized_property_name(property_id)
+            if property_key in unsupported_properties:
+                LOGGER.debug(
+                    "Skipping known unsupported device property: %s %s",
+                    device_identifier,
+                    property_id,
+                )
+                continue
+
             try:
                 response = await self.read_property(
                     address=address, objid=device_identifier, prop=property_id
                 )
             except ErrorRejectAbortNack as err:
-                LOGGER.error(
-                    f"Error reading device properties one by one: {device_identifier}: {property_id} {err}"
-                )
+                error_text = str(err)
+                if "unknown-property" in error_text:
+                    if property_key not in unsupported_properties:
+                        unsupported_properties.add(property_key)
+                        self.subscription_diagnostics[
+                            "discovery_unsupported_device_properties"
+                        ] += 1
+                    LOGGER.debug(
+                        "Optional BACnet device property unavailable: %s %s",
+                        device_identifier,
+                        property_id,
+                    )
+                    continue
 
-                if "no-response" in str(err):
+                if "no-response" in error_text:
+                    LOGGER.error(
+                        "No response reading device property: %s %s: %s",
+                        device_identifier,
+                        property_id,
+                        err,
+                    )
                     return False
 
+                LOGGER.warning(
+                    "Unable to read device property: %s %s: %s",
+                    device_identifier,
+                    property_id,
+                    err,
+                )
                 continue
             except AttributeError as err:
                 LOGGER.error(
