@@ -2,6 +2,16 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.2.12
+05/08/2026
+
+## Fixed
+- Treated BACnet `unknown-property` responses for optional discovery properties as expected capability differences instead of emitting thousands of error messages.
+
+## Improved
+- Added aggregate diagnostics and one discovery summary for unsupported optional properties and genuine discovery read failures.
+- Renamed the COV progress badge to `COV-Initialisierung` to clarify that it counts targets confirmed at least once since startup, not currently active subscriptions.
+
 # 1.2.11
 04/08/2026
 

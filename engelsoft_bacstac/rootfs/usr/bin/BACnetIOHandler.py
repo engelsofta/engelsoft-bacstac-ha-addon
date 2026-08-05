@@ -133,6 +133,8 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
             "poll_worker_recoveries": 0,
             "poll_address_waits": 0,
             "last_poll_cycle_seconds": None,
+            "discovery_unsupported_properties": 0,
+            "discovery_read_failures": 0,
         }
         self.vendor_info = get_vendor_info(0)
         asyncio.get_event_loop().create_task(self.IAm_handler())
@@ -2053,7 +2055,10 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                 f"device:{device_identifier[1]}"
             ].get("objectList", [])
 
+            unsupported_properties = 0
+
             async def read_one_object(obj_id):
+                nonlocal unsupported_properties
                 if not isinstance(obj_id, ObjectIdentifier):
                     obj_id = ObjectIdentifier(obj_id)
 
@@ -2086,10 +2091,25 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                                 prop=property_id,
                             )
                     except ErrorRejectAbortNack as err:
-                        LOGGER.error(
-                            f"Error reading object list one by one: {device_identifier} {obj_id} {property_id}: {err}"
+                        error_text = str(err)
+                        if "unknown-property" in error_text:
+                            unsupported_properties += 1
+                            LOGGER.debug(
+                                "Optional BACnet property unavailable: %s %s %s",
+                                device_identifier,
+                                obj_id,
+                                property_id,
+                            )
+                            continue
+                        self.subscription_diagnostics["discovery_read_failures"] += 1
+                        LOGGER.warning(
+                            "Discovery read failed: %s %s %s: %s",
+                            device_identifier,
+                            obj_id,
+                            property_id,
+                            err,
                         )
-                        if "no-response" in str(err):
+                        if "no-response" in error_text:
                             return False
                         continue
                     else:
@@ -2107,6 +2127,15 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                 *(read_one_object(obj_id) for obj_id in object_list),
                 return_exceptions=True,
             )
+            if unsupported_properties:
+                self.subscription_diagnostics[
+                    "discovery_unsupported_properties"
+                ] += unsupported_properties
+                LOGGER.info(
+                    "Skipped %s optional BACnet properties not provided by %s",
+                    unsupported_properties,
+                    device_identifier,
+                )
             if any(result is False or isinstance(result, Exception) for result in results):
                 LOGGER.warning(
                     "Some single-property BACnet discovery reads failed for %s",
