@@ -7,9 +7,12 @@
 
 ## Fixed
 - Treated BACnet `unknown-property` responses for optional discovery properties as expected capability differences instead of emitting thousands of error messages.
+- Stopped discovery immediately when a device times out instead of continuing through the remaining queued objects.
 
 ## Improved
 - Added aggregate diagnostics and one discovery summary for unsupported optional properties and genuine discovery read failures.
+- Reduced initial BACnet traffic by using each object's `propertyList`, deriving object identifiers locally and reading only a compact compatibility set when `propertyList` is unavailable.
+- Serialized and paced object-list and metadata discovery, with a 15-second request timeout and a 10-second per-device backoff after communication failures.
 - Renamed the COV progress badge to `COV-Initialisierung` to clarify that it counts targets confirmed at least once since startup, not currently active subscriptions.
 
 # 1.2.11

@@ -171,6 +171,18 @@ The Subscriptions page marks the affected target as **Polling disturbed** until
 a later read succeeds. With many or slow targets, a cycle can still take longer
 than the requested interval; the diagnostics report its actual duration.
 
+### Device-friendly initial discovery
+
+<!-- Changed by engelsofta in 2026: document paced discovery. -->
+At startup, BACstac still reads the device inventory so its objects are available
+to the Home Assistant integration. These discovery requests are sent one at a
+time with a short pause. Where supported, BACstac first reads `propertyList` and
+then requests only properties advertised by the object. Older devices without
+`propertyList` use a compact compatibility set. A timeout stops the current
+discovery pass and activates a short per-device backoff, preventing an
+unresponsive or resource-limited gateway from being hammered by the remaining
+inventory requests.
+
 In `integration_controlled` mode the integration can send an `update_mode` with
 each target to `POST /apiv1/managed/targets`:
 

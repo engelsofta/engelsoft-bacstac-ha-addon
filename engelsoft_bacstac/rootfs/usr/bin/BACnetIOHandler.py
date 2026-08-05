@@ -31,6 +31,7 @@ from bacpypes3.pdu import Address
 from bacpypes3.primitivedata import ObjectIdentifier, ObjectType, OctetString
 from bacpypes3.service.cov import SubscriptionContextManager
 from const import (LOGGER, device_properties_to_read,
+                   object_properties_discovery_fallback,
                    object_properties_to_read_once,
                    object_properties_to_read_periodically,
                    subscribable_objects)
@@ -38,7 +39,10 @@ from inventory_cache import InventoryCache
 
 KeyType = TypeVar("KeyType")
 _debug = 0
-_DISCOVERY_READ_CONCURRENCY = 3
+_DISCOVERY_READ_CONCURRENCY = 1
+_DISCOVERY_REQUEST_TIMEOUT = 15
+_DISCOVERY_REQUEST_DELAY = 0.02
+_DISCOVERY_BACKOFF_SECONDS = 10
 _READ_PROPERTY_MULTIPLE_SERVICE_BIT = 14
 
 
@@ -135,6 +139,9 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
             "last_poll_cycle_seconds": None,
             "discovery_unsupported_properties": 0,
             "discovery_read_failures": 0,
+            "discovery_property_lists": 0,
+            "discovery_property_list_fallbacks": 0,
+            "discovery_backoffs": 0,
         }
         self.vendor_info = get_vendor_info(0)
         asyncio.get_event_loop().create_task(self.IAm_handler())
@@ -164,13 +171,13 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         self.cov_fallback_object_lists: dict[str, list[ObjectIdentifier]] = {}
         self.cov_fallback_device_tasks: dict[str, asyncio.Task] = {}
         self.cov_watchdog_tasks: dict[tuple[str, str], asyncio.Task] = {}
-        # The BACnet station benefits from bounded parallel discovery reads,
-        # but can become unreliable when it receives a large burst. Keep this
-        # deliberately conservative; runtime COV and managed polling do not use
-        # this semaphore.
+        # Changed by Engelsoft: discovery is serialized and paced because some
+        # BACnet gateways become unreliable when requests arrive in bursts.
+        # Runtime COV and managed polling do not use this semaphore.
         self.discovery_read_semaphore = asyncio.Semaphore(
             _DISCOVERY_READ_CONCURRENCY
         )
+        self.discovery_backoff_until: dict[str, float] = {}
         self.inventory_cache = InventoryCache()
         self.inventory_cache_diagnostics = {
             "restored_devices": 0,
@@ -191,8 +198,10 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         ] = {}
         self._restore_inventory_cache()
         LOGGER.info(
-            "BACnet discovery read concurrency: %s",
+            "BACnet discovery pacing: concurrency=%s delay=%sms timeout=%ss",
             _DISCOVERY_READ_CONCURRENCY,
+            int(_DISCOVERY_REQUEST_DELAY * 1000),
+            _DISCOVERY_REQUEST_TIMEOUT,
         )
         self.startup_complete.set()
         LOGGER.debug("Application initialised")
@@ -227,6 +236,122 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
 
     def _end_fresh_discovery(self, device_key: str) -> None:
         self._active_discovery_devices.discard(device_key)
+
+    async def _run_discovery_request(
+        self,
+        device_identifier: ObjectIdentifier,
+        request_method,
+        **request_kwargs,
+    ):
+        """Run one paced discovery request without blocking runtime updates."""
+        device_key = self.identifier_to_string(device_identifier)
+        async with self.discovery_read_semaphore:
+            remaining_backoff = self.discovery_backoff_until.get(
+                device_key, 0.0
+            ) - time.monotonic()
+            if remaining_backoff > 0:
+                await asyncio.sleep(remaining_backoff)
+
+            try:
+                return await asyncio.wait_for(
+                    request_method(**request_kwargs),
+                    timeout=_DISCOVERY_REQUEST_TIMEOUT,
+                )
+            except asyncio.CancelledError:
+                raise
+            except Exception as err:
+                error_text = str(err).lower()
+                communication_failure = isinstance(err, asyncio.TimeoutError) or any(
+                    marker in error_text
+                    for marker in (
+                        "no-response",
+                        "timeout",
+                        "busy",
+                        "buffer-overflow",
+                    )
+                )
+                if communication_failure:
+                    self.discovery_backoff_until[device_key] = max(
+                        self.discovery_backoff_until.get(device_key, 0.0),
+                        time.monotonic() + _DISCOVERY_BACKOFF_SECONDS,
+                    )
+                    self.subscription_diagnostics["discovery_backoffs"] += 1
+                    LOGGER.warning(
+                        "BACnet discovery backing off for %s seconds after %s: %s",
+                        _DISCOVERY_BACKOFF_SECONDS,
+                        device_key,
+                        type(err).__name__,
+                    )
+                raise
+            finally:
+                await asyncio.sleep(_DISCOVERY_REQUEST_DELAY)
+
+    @staticmethod
+    def _normalized_property_name(value) -> str:
+        """Normalize BACnet property identifiers for capability matching."""
+        raw_value = getattr(value, "attr", str(value))
+        return str(raw_value).replace("-", "").replace("_", "").lower()
+
+    async def _discovery_properties_for_object(
+        self,
+        device_identifier: ObjectIdentifier,
+        object_identifier: ObjectIdentifier,
+    ) -> list[PropertyIdentifier]:
+        """Use propertyList when available, otherwise return a safe baseline."""
+        try:
+            advertised = await self._run_discovery_request(
+                device_identifier,
+                self.read_property,
+                address=self.dev_to_addr(device_identifier),
+                objid=object_identifier,
+                prop=PropertyIdentifier("propertyList"),
+            )
+        except (ErrorRejectAbortNack, asyncio.TimeoutError) as err:
+            self.subscription_diagnostics["discovery_property_list_fallbacks"] += 1
+            if "unknown-property" in str(err):
+                LOGGER.debug("propertyList unavailable for %s", object_identifier)
+            else:
+                self.subscription_diagnostics["discovery_read_failures"] += 1
+                LOGGER.warning(
+                    "Unable to read propertyList for %s %s: %s",
+                    device_identifier,
+                    object_identifier,
+                    err,
+                )
+            return list(object_properties_discovery_fallback)
+        except (AttributeError, TypeError, ValueError) as err:
+            self.subscription_diagnostics["discovery_property_list_fallbacks"] += 1
+            self.subscription_diagnostics["discovery_read_failures"] += 1
+            LOGGER.warning(
+                "Unable to read propertyList for %s %s: %s",
+                device_identifier,
+                object_identifier,
+                err,
+            )
+            return list(object_properties_discovery_fallback)
+
+        if isinstance(advertised, ErrorType) or not isinstance(
+            advertised, (list, tuple)
+        ):
+            self.subscription_diagnostics["discovery_property_list_fallbacks"] += 1
+            return list(object_properties_discovery_fallback)
+
+        available = {
+            self._normalized_property_name(property_identifier)
+            for property_identifier in advertised
+        }
+        self.subscription_diagnostics["discovery_property_lists"] += 1
+        locally_derived = {
+            self._normalized_property_name("objectIdentifier"),
+            self._normalized_property_name("objectType"),
+        }
+        return [
+            property_identifier
+            for property_identifier in object_properties_to_read_once
+            if self._normalized_property_name(property_identifier) in available
+            and self._normalized_property_name(property_identifier)
+            not in locally_derived
+        ]
 
     def _complete_device_inventory_snapshot(
         self, device_identifier: ObjectIdentifier
@@ -1910,7 +2035,9 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         LOGGER.debug(f"Reading objectList property of {device_identifier} one by one.")
 
         try:
-            object_amount = await self.read_property(
+            object_amount = await self._run_discovery_request(
+                device_identifier,
+                self.read_property,
                 address=address,
                 objid=device_identifier,
                 prop=PropertyIdentifier("objectList"),
@@ -1919,7 +2046,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
 
             if object_amount == 0:
                 return False
-        except ErrorRejectAbortNack as err:
+        except (ErrorRejectAbortNack, asyncio.TimeoutError) as err:
             LOGGER.warning(
                 f"Error getting object list size for {device_identifier} at {address}: {err}"
             )
@@ -1929,22 +2056,19 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
 
         try:
             async def read_object_identifier(number):
-                async with self.discovery_read_semaphore:
-                    return await self.read_property(
-                        address=address,
-                        objid=device_identifier,
-                        prop=PropertyIdentifier("objectList"),
-                        array_index=number,
-                    )
-
-            object_list = list(
-                await asyncio.gather(
-                    *(
-                        read_object_identifier(number)
-                        for number in range(1, object_amount + 1)
-                    )
+                return await self._run_discovery_request(
+                    device_identifier,
+                    self.read_property,
+                    address=address,
+                    objid=device_identifier,
+                    prop=PropertyIdentifier("objectList"),
+                    array_index=number,
                 )
-            )
+
+            # Changed by Engelsoft: do not queue the complete device inventory
+            # at once. A strict sequence gives small gateways breathing room.
+            for number in range(1, object_amount + 1):
+                object_list.append(await read_object_identifier(number))
 
             self.dict_updater(
                 device_identifier=device_identifier,
@@ -1952,7 +2076,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                 property_identifier=PropertyIdentifier("objectList"),
                 property_value=object_list,
             )
-        except ErrorRejectAbortNack as err:
+        except (ErrorRejectAbortNack, asyncio.TimeoutError) as err:
             LOGGER.warning(
                 f"Error getting object list size for {device_identifier} at {address}: {err}"
             )
@@ -1982,11 +2106,12 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
             parameter_list = [obj_id, object_properties_to_read_once]
 
             try:  # Send readPropertyMultiple and get response
-                async with self.discovery_read_semaphore:
-                    response = await self.read_property_multiple(
-                        address=self.dev_to_addr(device_identifier),
-                        parameter_list=parameter_list,
-                    )
+                response = await self._run_discovery_request(
+                    device_identifier,
+                    self.read_property_multiple,
+                    address=self.dev_to_addr(device_identifier),
+                    parameter_list=parameter_list,
+                )
 
             except ErrorRejectAbortNack as err:
                 LOGGER.error(
@@ -2019,7 +2144,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                     property_array_index,
                     property_value,
                 ) in response:
-                    if property_value is not ErrorType:
+                    if not isinstance(property_value, ErrorType):
                         self.dict_updater(
                             device_identifier=device_identifier,
                             object_identifier=object_identifier,
@@ -2028,24 +2153,22 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                         )
                 return "ok"
 
-        results = await asyncio.gather(
-            *(read_one_object(obj_id) for obj_id in object_list),
-            return_exceptions=True,
-        )
-
-        if any(result == "fallback" for result in results):
-            LOGGER.info(
-                "ReadPropertyMultiple is unavailable; using bounded single-property discovery for %s",
-                device_identifier,
-            )
-            return await self.read_objects(device_identifier)
-
-        if any(result == "failed" or isinstance(result, Exception) for result in results):
-            LOGGER.warning(
-                "Some BACnet objects could not be read during discovery of %s",
-                device_identifier,
-            )
-            return False
+        # Changed by Engelsoft: stop immediately when RPM is unsupported or a
+        # device stops answering instead of scheduling every object in advance.
+        for obj_id in object_list:
+            result = await read_one_object(obj_id)
+            if result == "fallback":
+                LOGGER.info(
+                    "ReadPropertyMultiple is unavailable; using paced single-property discovery for %s",
+                    device_identifier,
+                )
+                return await self.read_objects(device_identifier)
+            if result == "failed":
+                LOGGER.warning(
+                    "BACnet discovery stopped after a failed object read for %s",
+                    device_identifier,
+                )
+                return False
 
         return True
 
@@ -2077,19 +2200,39 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                     )
                     return True
 
-                for property_id in object_properties_to_read_once:
+                # objectIdentifier and objectType are already present in the
+                # device objectList and do not need two extra BACnet requests.
+                self.dict_updater(
+                    device_identifier=device_identifier,
+                    object_identifier=obj_id,
+                    property_identifier=PropertyIdentifier("objectIdentifier"),
+                    property_value=obj_id,
+                )
+                self.dict_updater(
+                    device_identifier=device_identifier,
+                    object_identifier=obj_id,
+                    property_identifier=PropertyIdentifier("objectType"),
+                    property_value=obj_id[0],
+                )
+
+                properties_to_read = await self._discovery_properties_for_object(
+                    device_identifier,
+                    obj_id,
+                )
+                for property_id in properties_to_read:
                     property_class = object_class.get_property_type(property_id)
 
                     if property_class is None:
                         continue
 
                     try:
-                        async with self.discovery_read_semaphore:
-                            response = await self.read_property(
-                                address=self.dev_to_addr(device_identifier),
-                                objid=obj_id,
-                                prop=property_id,
-                            )
+                        response = await self._run_discovery_request(
+                            device_identifier,
+                            self.read_property,
+                            address=self.dev_to_addr(device_identifier),
+                            objid=obj_id,
+                            prop=property_id,
+                        )
                     except ErrorRejectAbortNack as err:
                         error_text = str(err)
                         if "unknown-property" in error_text:
@@ -2113,7 +2256,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                             return False
                         continue
                     else:
-                        if response is not ErrorType:
+                        if not isinstance(response, ErrorType):
                             self.dict_updater(
                                 device_identifier=device_identifier,
                                 object_identifier=obj_id,
@@ -2123,10 +2266,12 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
 
                 return True
 
-            results = await asyncio.gather(
-                *(read_one_object(obj_id) for obj_id in object_list),
-                return_exceptions=True,
-            )
+            results = []
+            for obj_id in object_list:
+                result = await read_one_object(obj_id)
+                results.append(result)
+                if result is False:
+                    break
             if unsupported_properties:
                 self.subscription_diagnostics[
                     "discovery_unsupported_properties"

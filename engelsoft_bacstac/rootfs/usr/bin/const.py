@@ -56,6 +56,26 @@ object_properties_to_read_once: list = [
     PropertyIdentifier("resolution"),
 ]
 
+# Conservative metadata set for devices that do not expose BACnet propertyList.
+# objectIdentifier and objectType are derived from the objectList entry locally.
+object_properties_discovery_fallback: list = [
+    PropertyIdentifier("objectName"),
+    PropertyIdentifier("description"),
+    PropertyIdentifier("presentValue"),
+    PropertyIdentifier("statusFlags"),
+    PropertyIdentifier("outOfService"),
+    PropertyIdentifier("units"),
+    PropertyIdentifier("reliability"),
+    PropertyIdentifier("covIncrement"),
+    PropertyIdentifier("stateText"),
+    PropertyIdentifier("numberOfStates"),
+    PropertyIdentifier("activeText"),
+    PropertyIdentifier("inactiveText"),
+    PropertyIdentifier("polarity"),
+    PropertyIdentifier("relinquishDefault"),
+    PropertyIdentifier("resolution"),
+]
+
 object_properties_to_read_periodically: list = [
     PropertyIdentifier("presentValue"),
     PropertyIdentifier("statusFlags"),
