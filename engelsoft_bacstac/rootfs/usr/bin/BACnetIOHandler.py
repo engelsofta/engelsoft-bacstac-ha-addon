@@ -108,7 +108,6 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         ttl=255,
         update_event=asyncio.Event(),
         addon_device_config=[],
-        subscription_mode="managed_polling",
         managed_poll_rate=10,
         managed_cov_subscription_delay=1,
         managed_cov_fallback_timeout=30,
@@ -149,7 +148,8 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         self.addon_device_config = (
             addon_device_config if addon_device_config else list()
         )
-        self.subscription_mode = subscription_mode
+        # Kept only as a stable diagnostic value for older integration clients.
+        self.subscription_mode = "integration_controlled"
         self.managed_poll_rate = max(3, int(managed_poll_rate))
         self.managed_cov_subscription_delay = max(
             0.0, float(managed_cov_subscription_delay)
@@ -520,7 +520,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
             {
                 "device_id": target[0],
                 "object_id": target[1],
-                "requested_mode": requested_mode or self.subscription_mode,
+                "requested_mode": requested_mode or "polling",
                 "state": "waiting",
                 "subscription_confirmed_at": None,
                 "subscription_confirmed_current": False,
@@ -819,23 +819,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                 self.poll_task(
                     device_identifier=ObjectIdentifier(device_identifier),
                     object_list=object_list,
-                    poll_rate=(
-                        self.managed_poll_rate
-                        if self.subscription_mode
-                        in {
-                            "integration_controlled",
-                            "managed_polling",
-                            "managed_cov",
-                        }
-                        else max(
-                            30,
-                            int(
-                                self.get_config_from_addon_config(
-                                    device_identifier
-                                ).get("slow_poll_rate", 600)
-                            ),
-                        )
-                    ),
+                    poll_rate=self.managed_poll_rate,
                     property_list=[PropertyIdentifier("presentValue")],
                 ),
                 name=f"cov-fallback-{device_key}",
@@ -1202,14 +1186,6 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
 
     async def replace_managed_targets(self, targets: list[tuple]) -> dict:
         """Apply integration targets while retaining BACnet safety guardrails."""
-        managed_modes = {
-            "integration_controlled",
-            "managed_polling",
-            "managed_cov",
-        }
-        if self.subscription_mode not in managed_modes:
-            return {"accepted": False, "mode": self.subscription_mode, "targets": 0}
-
         requested_modes: dict[tuple[str, str], str] = {}
         identifiers: dict[
             tuple[str, str], tuple[ObjectIdentifier, ObjectIdentifier]
@@ -1218,10 +1194,6 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
             device_identifier = ObjectIdentifier(entry[0])
             object_identifier = ObjectIdentifier(entry[1])
             requested_mode = str(entry[2]).lower() if len(entry) > 2 else "polling"
-            if self.subscription_mode == "managed_polling":
-                requested_mode = "polling"
-            elif self.subscription_mode == "managed_cov":
-                requested_mode = "cov"
             if requested_mode not in {"cov", "polling", "disabled"}:
                 requested_mode = "polling"
             target = self._target_key(device_identifier, object_identifier)
@@ -1383,12 +1355,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         """Return a stable summary for integrations and the WebUI."""
         return {
             "accepted": True,
-            "mode": self.subscription_mode,
-            "strategy": (
-                "integration" if self.subscription_mode == "integration_controlled"
-                else "cov" if self.subscription_mode == "managed_cov"
-                else "polling"
-            ),
+            "strategy": "integration",
             "targets": len(self.managed_targets),
             "cov_targets": len(self.managed_cov_task_names),
             "polling_targets": len(self.managed_poll_targets),
@@ -1633,34 +1600,29 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         )
 
     async def handle_cov_check(self, device_identifier) -> None:
-
-        if self.subscription_mode in {"managed_cov", "integration_controlled"}:
-            device_key = self.identifier_to_string(device_identifier)
-            config = self.get_config_from_addon_config(device_identifier)
-            for target_device, target_object in self.managed_targets:
-                if target_device != device_key:
-                    continue
-                if self.managed_requested_modes.get(
-                    (target_device, target_object)
-                ) != "cov":
-                    continue
-                status = self.target_status.get((target_device, target_object), {})
-                if status.get("fallback_active") and status.get(
-                    "fallback_reason"
-                ) in {"cov_silent", "cov_failed"}:
-                    continue
-                await self.create_subscription_task(
-                    device_identifier=device_identifier,
-                    object_identifier=ObjectIdentifier(target_object),
-                    confirmed_notifications=True,
-                    lifetime=config.get(
-                        "CoV_lifetime", self.default_subscription_lifetime
-                    ),
-                )
-            return
-
-        if self.subscription_mode == "managed_polling":
-            return
+        device_key = self.identifier_to_string(device_identifier)
+        config = self.get_config_from_addon_config(device_identifier)
+        for target_device, target_object in self.managed_targets:
+            if target_device != device_key:
+                continue
+            if self.managed_requested_modes.get(
+                (target_device, target_object)
+            ) != "cov":
+                continue
+            status = self.target_status.get((target_device, target_object), {})
+            if status.get("fallback_active") and status.get(
+                "fallback_reason"
+            ) in {"cov_silent", "cov_failed"}:
+                continue
+            await self.create_subscription_task(
+                device_identifier=device_identifier,
+                object_identifier=ObjectIdentifier(target_object),
+                confirmed_notifications=True,
+                lifetime=config.get(
+                    "CoV_lifetime", self.default_subscription_lifetime
+                ),
+            )
+        return
 
         device_string = self.identifier_to_string(device_identifier)
 
@@ -1919,13 +1881,12 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                 object_key, set()
             ).add(property_key)
 
-        if self.subscription_mode in {"managed_cov", "integration_controlled"}:
-            target = (
-                f"{device_identifier[0].attr}:{device_identifier[1]}",
-                f"{object_identifier[0].attr}:{object_identifier[1]}",
-            )
-            if target in self.managed_targets:
-                self.pending_managed_updates.add(target)
+        target = (
+            f"{device_identifier[0].attr}:{device_identifier[1]}",
+            f"{object_identifier[0].attr}:{object_identifier[1]}",
+        )
+        if target in self.managed_targets:
+            self.pending_managed_updates.add(target)
 
         if update_source in {"cov", "poll"}:
             self._mark_target_update(

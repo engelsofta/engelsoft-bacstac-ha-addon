@@ -26,7 +26,6 @@ options:
   objectName: Engelsoft BACstac
   address: auto
   objectIdentifier: 420
-  subscription_mode: managed_polling
   managed_poll_rate: 10
   managed_cov_subscription_delay_ms: 1000
   managed_cov_fallback_timeout: 30
@@ -35,12 +34,6 @@ options:
     - deviceID: all
       CoV_lifetime: 600
       CoV_limit: 20
-      CoV_list: []
-      quick_poll_rate: 5
-      quick_poll_list: []
-      slow_poll_rate: 600
-      slow_poll_list:
-        - all
       resub_on_iam: true
       reread_on_iam: false
   api_accessible: false
@@ -50,7 +43,6 @@ schema:
   objectName: str
   address: str
   objectIdentifier: int
-  subscription_mode: list(integration_controlled|managed_polling|managed_cov|legacy)
   managed_poll_rate: int(3,300)
   managed_cov_subscription_delay_ms: int(0,30000)?
   managed_cov_fallback_timeout: int(10,600)
@@ -59,14 +51,6 @@ schema:
     - deviceID: str? 
       CoV_lifetime: int(60,28800)?
       CoV_limit: int(0,1000)?
-      CoV_list:
-        - str? 
-      quick_poll_rate: int(3,30)?
-      quick_poll_list:
-        - str? 
-      slow_poll_rate: int(30,3000)?
-      slow_poll_list:
-        - str?
       resub_on_iam: bool?
       reread_on_iam: bool?
   api_accessible: bool?

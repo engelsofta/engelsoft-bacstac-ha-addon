@@ -187,18 +187,17 @@ async def subscribe_handler_task(app: Application, sub_queue: asyncio.Queue) -> 
                     confirmed_notifications=notifications,
                     lifetime=lifetime,
                 )
-                if app.subscription_mode == "integration_controlled":
-                    target = app._target_key(device_identifier, object_identifier)
-                    app.managed_targets.add(target)
-                    app.managed_requested_modes[target] = "cov"
-                    app._ensure_target_status(target, "cov")
-                    if created:
-                        notification_name = (
-                            "confirmed" if notifications else "unconfirmed"
-                        )
-                        app.managed_cov_task_names.add(
-                            f"{target[0]},{target[1]},{notification_name}"
-                        )
+                target = app._target_key(device_identifier, object_identifier)
+                app.managed_targets.add(target)
+                app.managed_requested_modes[target] = "cov"
+                app._ensure_target_status(target, "cov")
+                if created:
+                    notification_name = (
+                        "confirmed" if notifications else "unconfirmed"
+                    )
+                    app.managed_cov_task_names.add(
+                        f"{target[0]},{target[1]},{notification_name}"
+                    )
 
     except asyncio.CancelledError as err:
         LOGGER.warning(f"Subscribe task cancelled: {err}")
@@ -220,14 +219,13 @@ async def unsubscribe_handler_task(
             status = app.target_status.get(target)
             if status:
                 status["state"] = "cancelled"
-            if app.subscription_mode == "integration_controlled":
-                app.managed_targets.discard(target)
-                app.managed_requested_modes.pop(target, None)
-                app.managed_cov_task_names = {
-                    name
-                    for name in app.managed_cov_task_names
-                    if not name.startswith(f"{target[0]},{target[1]},")
-                }
+            app.managed_targets.discard(target)
+            app.managed_requested_modes.pop(target, None)
+            app.managed_cov_task_names = {
+                name
+                for name in app.managed_cov_task_names
+                if not name.startswith(f"{target[0]},{target[1]},")
+            }
 
             for task in app.subscription_tasks:
                 if task_name in task.get_name():
@@ -389,7 +387,6 @@ async def main():
         ttl=int(foreign_ttl),
         update_event=webAPI.events.val_updated_event,
         addon_device_config=options.get("devices_setup"),
-        subscription_mode=options.get("subscription_mode", "managed_polling"),
         managed_poll_rate=options.get("managed_poll_rate", 10),
         managed_cov_subscription_delay=(
             max(0, int(options["managed_cov_subscription_delay_ms"])) / 1000
