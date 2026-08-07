@@ -1,13 +1,5 @@
 // Created by engelsofta in 2026 for the modified Engelsoft BACstac distribution.
 (() => {
-  const labels = {
-    integration_controlled: "Integrationsgesteuert",
-    managed_polling: "Verwaltetes Polling",
-    managed_cov: "COV bevorzugt",
-    legacy: "Legacy / manuell",
-    starting: "Wird gestartet",
-  };
-
   function setMetric(name, value) {
     document.querySelectorAll(`[data-mode-metric="${name}"]`).forEach((node) => {
       const number = node.querySelector("b");
@@ -29,7 +21,7 @@
         (target) => target.fallback_active,
       ).length;
       document.querySelectorAll("[data-mode-label]").forEach((node) => {
-        node.textContent = labels[data.subscription_mode] || data.subscription_mode;
+        node.textContent = data.ready ? "Integrationsgesteuert" : "Wird gestartet";
       });
       setMetric("targets", data.managed_targets);
       setMetric("cov", data.managed_cov_targets);

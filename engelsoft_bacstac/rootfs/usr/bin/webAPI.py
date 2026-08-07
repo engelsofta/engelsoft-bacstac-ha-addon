@@ -91,11 +91,7 @@ def websocket_snapshot() -> dict:
             source = deep_update(source, file)
 
     application = bacnet_application
-    if (
-        getattr(application, "subscription_mode", None)
-        not in {"managed_cov", "integration_controlled"}
-        or not getattr(application, "managed_targets", None)
-    ):
+    if not getattr(application, "managed_targets", None):
         return source
 
     filtered: dict = {}
@@ -197,18 +193,11 @@ templates = Jinja2Templates(directory=f"{path_str}/templates")
 def sidebar_status() -> dict:
     """Build the compact transport summary shown on every WebUI page."""
     application = bacnet_application
-    mode = getattr(application, "subscription_mode", "starting")
-    labels = {
-        "integration_controlled": "Integrationsgesteuert",
-        "managed_polling": "Verwaltetes Polling",
-        "managed_cov": "COV bevorzugt",
-        "legacy": "Legacy / manuell",
-        "starting": "Wird gestartet",
-    }
+    ready = application is not None
     statuses = getattr(application, "target_status", {}).values()
     return {
-        "mode": mode,
-        "label": labels.get(mode, mode),
+        "mode": "integration_controlled" if ready else "starting",
+        "label": "Integrationsgesteuert" if ready else "Wird gestartet",
         "targets": len(getattr(application, "managed_targets", [])),
         "cov": len(getattr(application, "managed_cov_task_names", [])),
         "polling": len(getattr(application, "managed_poll_targets", [])),
@@ -318,7 +307,7 @@ async def get_subscription_diagnostics():
 
     return {
         "ready": application is not None,
-        "subscription_mode": getattr(application, "subscription_mode", "starting"),
+        "subscription_mode": "integration_controlled" if application else "starting",
         "managed_poll_rate": getattr(application, "managed_poll_rate", None),
         "managed_targets": len(getattr(application, "managed_targets", [])),
         "managed_poll_targets": len(getattr(application, "managed_poll_targets", [])),
@@ -807,10 +796,7 @@ async def websocket_writer():
                 # send sets the event again instead of being cleared afterwards.
                 events.val_updated_event.clear()
                 application = bacnet_application
-                managed_delta = (
-                    getattr(application, "subscription_mode", None)
-                    in {"managed_cov", "integration_controlled"}
-                )
+                managed_delta = application is not None
                 if managed_delta:
                     dict_to_send = application.consume_managed_delta()
                 else:

@@ -2,6 +2,14 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# Next
+
+## Changed
+- Removed the selectable BACstac operating modes. Engelsoft Beacon BACnet/IP is now always the source of truth for per-target COV, polling or disabled state.
+- Removed the obsolete static COV and polling lists from app configuration.
+- Renamed the remaining per-device settings to device protection so their
+  safety-only purpose is clear in the app configuration UI.
+
 # 1.2.13
 05/08/2026
 

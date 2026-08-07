@@ -104,7 +104,6 @@ Example add-on configuration:
 objectName: Engelsoft BACstac
 address: auto
 objectIdentifier: 420
-subscription_mode: managed_polling
 managed_poll_rate: 10
 managed_cov_subscription_delay_ms: 1000
 managed_cov_fallback_timeout: 30
@@ -113,23 +112,12 @@ devices_setup:
   - deviceID: all
     CoV_lifetime: 600
     CoV_limit: 20
-    CoV_list: []
-    quick_poll_rate: 5
-    quick_poll_list: []
-    slow_poll_rate: 600
-    slow_poll_list:
-      - all
+    resub_on_iam: true
+    reread_on_iam: false
   - deviceID: device:1835087
     CoV_lifetime: 600
-    CoV_list: []
-    quick_poll_rate: 5
-    quick_poll_list:
-      - analogInput:0
-      - analogInput:1
-      - analogInput:2
-    slow_poll_rate: 300
-    slow_poll_list:
-      - all
+    resub_on_iam: true
+    reread_on_iam: false
 loglevel: WARNING
 segmentation: segmentedBoth
 vendorID: 15
@@ -157,8 +145,7 @@ understand how command prioritization affects the target BACnet controller.
 
 ### Options: safe update handling
 
-- `integration_controlled`: The integration selects `cov`, `polling` or `disabled` for every target. BACstac still enforces the per-device COV limit, subscription pacing and automatic polling fallback. Targets without an explicit mode use polling for backward compatibility.
-- `subscription_mode`: `managed_polling` is the safe default. Engelsoft Beacon BACnet/IP sends the required targets to the add-on and BACstac polls only those targets. `managed_cov` uses COV where possible and automatically polls excess, failed or silent COV targets. `legacy` uses only the static `devices_setup` rules.
+- Engelsoft Beacon BACnet/IP selects `cov`, `polling` or `disabled` for every target. BACstac enforces the per-device COV limit, subscription pacing and automatic polling fallback. Targets without an explicit update mode use polling for backward compatibility.
 - `managed_poll_rate`: Polling interval in seconds for integration-managed targets.
 - `managed_cov_subscription_delay_ms`: Delay in milliseconds between COV subscription requests. `1000` equals one second; for example, `250` allows four subscription attempts per second. Existing installations that only contain `managed_cov_subscription_delay` continue to interpret that legacy value as seconds.
 - `managed_cov_fallback_timeout`: Time in seconds after a confirmed COV subscription before control polling begins. The COV subscription remains active and permanent polling fallback happens only after repeated polls prove a value change without a matching COV notification.
@@ -183,8 +170,8 @@ discovery pass and activates a short per-device backoff, preventing an
 unresponsive or resource-limited gateway from being hammered by the remaining
 inventory requests.
 
-In `integration_controlled` mode the integration can send an `update_mode` with
-each target to `POST /apiv1/managed/targets`:
+The integration can send an `update_mode` with each target to
+`POST /apiv1/managed/targets`:
 
 ```json
 {"targets": [
@@ -194,46 +181,28 @@ each target to `POST /apiv1/managed/targets`:
 ]}
 ```
 
-The WebUI status strip makes the active control mode and the current COV,
-polling, fallback and disabled target counts visible on every page.
+The WebUI status strip shows the current COV, polling, fallback and disabled
+target counts on every page.
 
-### Option: `devices_setup` Device Setup
+### Option: `devices_setup` Device protection
 
-The `devices_setup` configuration is a list of configurations for specific devices. 
-Each list entry will contain a deviceID along with settings for Change of Value as well as polling.
+The `devices_setup` configuration contains only device protection settings.
+Each entry defines a device ID, COV safety limits and the response to a new
+I-Am message. Object selection and transport remain controlled exclusively by
+the Home Assistant integration.
 
 ```yaml
 devices_setup:
   - deviceID: device:1835087
     CoV_lifetime: 600
     CoV_limit: 20
-    CoV_list: []
-    quick_poll_rate: 5
-    quick_poll_list: []
-    slow_poll_rate: 600
-    slow_poll_list:
-      - all
+    resub_on_iam: true
+    reread_on_iam: false
 ```
 
 - `deviceID` This key contains the device identifier (in "device:xxxx" format where xxxx is the number) for the device you want the following options to count for. A special "all" key will make the settings below a general configuration.
 - `CoV_lifetime` This key contains the lifetime for each CoV subscription made. This value is in seconds and can be between 60 and 28800. The add-on will automatically resubscribe once the lifetime has passed.
 - `CoV_limit` limits simultaneous COV subscriptions for this device. The default is 20. Additional integration-managed targets automatically use polling. Set it to 0 to disable COV for the device.
-- `CoV_list` contains each object identifier (in `object:xxxx` form) that legacy mode should subscribe to. It is empty by default. The special `all` value can create a very large number of subscriptions and should only be used when the device's documented COV capacity is known; the configured COV limit still applies.
-```yaml
-analogInput
-analogOutput
-analogValue
-binaryInput
-binaryOutput
-binaryValue
-multiStateInput
-multiStateOutput
-multiStateValue
-```
-- `quick_poll_rate` This key contains the rate at which quick poll objects have to be read. This is in seconds, between 3 and 30.
-- `quick_poll_list` This key contains a list containing each object identifier the add-on has to poll at the poll rate defined above. The list can be empty if no quick polling is desired.
-- `slow_poll_rate` This key contains the rate at which quick poll objects have to be read. This is in seconds, between 30 and 3000.
-- `slow_poll_list` This key contains a list containing each object identifier the add-on has to poll at the poll rate defined above. The list can be empty if no slow polling is desired. A special "all" key will make the add-on poll all objects of the device.
 - `resub_on_iam` Resubscribe to an object with CoV when an I-Am request has been received. When the lifetime of the object has passed, enabling this key will result in the resubscription of a CoV subscription. Otherwise it'll just update any new information of the device.
 - `reread_on_iam` Reread the object list when an I-Am request has been received. This key will result in all objects of this device to be read again.
 
