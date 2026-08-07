@@ -2,7 +2,8 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
-# Next
+# 1.2.14
+07/08/2026
 
 ## Changed
 - Removed the selectable BACstac operating modes. Engelsoft Beacon BACnet/IP is now always the source of truth for per-target COV, polling or disabled state.
