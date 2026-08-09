@@ -1,11 +1,7 @@
 # Modified by engelsofta in 2026; derived from the Bepacom BACnet/IP add-on.
 server {
-    # listen on port
+    # Internal API/WebSocket endpoint used by Engelsoft Beacon BACnet/IP.
     listen 8099;
-    {{if .port}}
-        listen {{.port}};
-    {{end}}
-
 
     allow 172.30.32.0/24;
     allow 127.0.0.0/24;
@@ -14,11 +10,9 @@ server {
         allow {{ . }};
     {{ end }}
 
-    {{if not .accessible}}
-        deny all;
-    {{else}}
-        allow all;
-    {{end}}
+    # Changed by engelsofta: the API is internal-only. Home Assistant,
+    # loopback and the add-on host addresses above remain permitted.
+    deny all;
 
     # forward request to backend
     location / {

@@ -18,9 +18,6 @@ configuration:
   managed_cov_subscription_delay_ms:
     name: Updates · Pauze tussen COV-abonnementen
     description: Wachttijd in milliseconden tussen COV-aanvragen. 1000 ms is één seconde. Lagere waarden bouwen sneller op, maar belasten gevoelige BACnet-apparaten meer.
-  managed_cov_subscription_delay:
-    name: Compatibiliteit · Oude COV-pauze in seconden
-    description: Verouderde secondewaarde van bestaande installaties. Wordt alleen gebruikt als de nieuwe millisecondewaarde ontbreekt.
   managed_cov_fallback_timeout:
     name: Updates · COV-controleduur
     description: Tijd voordat een rustige controlepoll start als een bevestigd COV-abonnement niets meldt. Permanente pollingfallback volgt pas na een bewezen waardewijziging zonder COV.
@@ -63,9 +60,5 @@ configuration:
   devices_setup:
     name: BACnet · Apparaatbeveiliging
     description: Veiligheidslimieten en herstelgedrag per BACnet-apparaat. Meestal volstaat de bestaande standaardregel all.
-  api_accessible:
-    name: Toegang · Externe API toestaan
-    description: Sta toe dat de API toegankelijk is buiten Home Assistant.
 network:
   47808/udp: BACnet poort.
-  80/tcp: Poort waarmee de integration moet verbinden. Wanneer je deze poort leeg laat, moet de integration met poort 8099 verbinden.

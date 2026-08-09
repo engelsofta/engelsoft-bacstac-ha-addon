@@ -388,10 +388,9 @@ async def main():
         update_event=webAPI.events.val_updated_event,
         addon_device_config=options.get("devices_setup"),
         managed_poll_rate=options.get("managed_poll_rate", 10),
-        managed_cov_subscription_delay=(
-            max(0, int(options["managed_cov_subscription_delay_ms"])) / 1000
-            if options.get("managed_cov_subscription_delay_ms") is not None
-            else max(0, int(options.get("managed_cov_subscription_delay", 1)))
+        managed_cov_subscription_delay_seconds=(
+            max(0, int(options.get("managed_cov_subscription_delay_ms", 1000)))
+            / 1000
         ),
         managed_cov_fallback_timeout=options.get(
             "managed_cov_fallback_timeout", 30

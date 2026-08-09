@@ -109,7 +109,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         update_event=asyncio.Event(),
         addon_device_config=[],
         managed_poll_rate=10,
-        managed_cov_subscription_delay=1,
+        managed_cov_subscription_delay_seconds=1,
         managed_cov_fallback_timeout=30,
     ) -> None:
         if foreign_ip:
@@ -151,8 +151,8 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         # Kept only as a stable diagnostic value for older integration clients.
         self.subscription_mode = "integration_controlled"
         self.managed_poll_rate = max(3, int(managed_poll_rate))
-        self.managed_cov_subscription_delay = max(
-            0.0, float(managed_cov_subscription_delay)
+        self.managed_cov_subscription_delay_seconds = max(
+            0.0, float(managed_cov_subscription_delay_seconds)
         )
         self.managed_cov_fallback_timeout = max(
             10, int(managed_cov_fallback_timeout)
@@ -842,10 +842,10 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         target = self._target_key(device_identifier, object_identifier)
         try:
             await asyncio.sleep(self.managed_cov_fallback_timeout)
-            if self.managed_cov_subscription_delay:
+            if self.managed_cov_subscription_delay_seconds:
                 await asyncio.sleep(
                     (ObjectIdentifier(object_identifier)[1] % 20)
-                    * self.managed_cov_subscription_delay
+                    * self.managed_cov_subscription_delay_seconds
                 )
             status = self.target_status.get(target)
             if status and (
@@ -2470,7 +2470,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                 object_identifier,
                 "cov_limit",
             )
-            await asyncio.sleep(self.managed_cov_subscription_delay)
+            await asyncio.sleep(self.managed_cov_subscription_delay_seconds)
             return False
 
         LOGGER.debug(
@@ -2489,7 +2489,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         )
         task.add_done_callback(self._subscription_task_done)
         self.subscription_tasks.append(task)
-        await asyncio.sleep(self.managed_cov_subscription_delay)
+        await asyncio.sleep(self.managed_cov_subscription_delay_seconds)
         return True
 
     def _subscription_task_done(self, task: asyncio.Task) -> None:

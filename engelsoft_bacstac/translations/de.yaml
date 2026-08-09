@@ -18,9 +18,6 @@ configuration:
   managed_cov_subscription_delay_ms:
     name: Aktualisierung · Abstand zwischen COV-Anmeldungen
     description: Wartezeit in Millisekunden zwischen zwei COV-Anmeldungen. 1000 ms entsprechen einer Sekunde. Kleinere Werte beschleunigen den Aufbau, können empfindliche BACnet-Geräte aber stärker belasten.
-  managed_cov_subscription_delay:
-    name: Kompatibilität · Alter COV-Abstand in Sekunden
-    description: Veralteter Sekundenwert bestehender Installationen. Wird nur verwendet, wenn kein neuer Millisekundenwert vorhanden ist.
   managed_cov_fallback_timeout:
     name: Aktualisierung · COV-Prüfzeit
     description: Zeit bis zum Start eines schonenden Kontroll-Polls, wenn nach einer bestätigten COV-Anmeldung keine Meldung eintrifft. Erst nach nachgewiesener Wertänderung ohne COV wird dauerhaft auf Polling gewechselt.
@@ -63,10 +60,5 @@ configuration:
   devices_setup:
     name: BACnet · Geräteschutz
     description: Sicherheitsgrenzen und Wiederherstellungsverhalten je BACnet-Gerät. Für normale Installationen genügt die vorhandene Standardregel all.
-  api_accessible:
-    name: Zugriff · Externe API erlauben
-    description: Erlaubt den Zugriff auf die API außerhalb von Home Assistant. Nur aktivieren, wenn dieser Zugriff benötigt und das Netzwerk vertrauenswürdig ist.
-
 network:
   47808/udp: BACnet/IP-Port
-  80/tcp: Optionaler Port für den direkten Zugriff auf API und Weboberfläche

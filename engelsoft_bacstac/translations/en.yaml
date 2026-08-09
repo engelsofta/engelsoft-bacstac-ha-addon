@@ -18,9 +18,6 @@ configuration:
   managed_cov_subscription_delay_ms:
     name: Updates · Delay between COV subscriptions
     description: Delay in milliseconds between COV subscription requests. 1000 ms equals one second. Lower values build faster but can put more load on sensitive BACnet devices.
-  managed_cov_subscription_delay:
-    name: Compatibility · Legacy COV delay in seconds
-    description: Deprecated seconds value from existing installations. Used only when the new millisecond value is absent.
   managed_cov_fallback_timeout:
     name: Updates · COV verification time
     description: Time before a gentle control poll starts when a confirmed COV subscription sends no notification. Permanent polling fallback occurs only after a value change without COV is proven.
@@ -63,9 +60,5 @@ configuration:
   devices_setup:
     name: BACnet · Device protection
     description: Safety limits and recovery behavior for each BACnet device. Most installations only need the existing all default rule.
-  api_accessible:
-    name: Access · Allow external API
-    description: Allow API access from outside of Home Assistant.
 network:
   47808/udp: BACnet port.
-  80/tcp: Port which the integration should connect to. If you leave this empty, the integration should connect to port 8099.

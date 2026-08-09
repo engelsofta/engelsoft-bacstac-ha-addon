@@ -2,6 +2,13 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.2.15
+09/08/2026
+
+## Changed
+- Removed the obsolete seconds-based COV subscription delay from configuration, translations, documentation and runtime fallback handling. COV pacing now uses only the millisecond setting.
+- Removed the external API switch, optional TCP port mapping and their runtime template branches. API and WebSocket access on port 8099 are now always restricted to Home Assistant, loopback and the add-on host addresses required by the integration.
+
 # 1.2.14
 07/08/2026
 

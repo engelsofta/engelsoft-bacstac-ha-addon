@@ -147,7 +147,7 @@ understand how command prioritization affects the target BACnet controller.
 
 - Engelsoft Beacon BACnet/IP selects `cov`, `polling` or `disabled` for every target. BACstac enforces the per-device COV limit, subscription pacing and automatic polling fallback. Targets without an explicit update mode use polling for backward compatibility.
 - `managed_poll_rate`: Polling interval in seconds for integration-managed targets.
-- `managed_cov_subscription_delay_ms`: Delay in milliseconds between COV subscription requests. `1000` equals one second; for example, `250` allows four subscription attempts per second. Existing installations that only contain `managed_cov_subscription_delay` continue to interpret that legacy value as seconds.
+- `managed_cov_subscription_delay_ms`: Delay in milliseconds between COV subscription requests. `1000` equals one second; for example, `250` allows four subscription attempts per second.
 - `managed_cov_fallback_timeout`: Time in seconds after a confirmed COV subscription before control polling begins. The COV subscription remains active and permanent polling fallback happens only after repeated polls prove a value change without a matching COV notification.
 
 The **Subscriptions** page shows the state of every managed target, when its COV subscription was confirmed, the last COV notification, the last poll and the age of its current value.
@@ -252,9 +252,6 @@ The amount of segments that the device can accept at most for a single service r
 Maximum size a BACnet message/segment is allowed to be. 
 A common BACnet/IP value and the default for the add-on is 1476, and a common BACnet/MSTP value is 480.
 
-
-### Network port: `80/TCP`
-Port which the integration should connect to. If you leave this empty, the integration should connect to port 8099.
 
 ### Network port: `47808/UDP`
 BACnet/IP port. The add-on seems to work if you leave this empty. Feel free to set it to empty if opening it causes issues.
