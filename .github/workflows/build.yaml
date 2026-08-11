@@ -76,6 +76,7 @@ jobs:
             io.hass.name=Engelsoft BACstac
             io.hass.description=Connects BACnet/IP networks with Home Assistant
             io.hass.url=https://github.com/engelsofta/engelsoft-bacstac-ha-addon
+            org.opencontainers.image.source=https://github.com/engelsofta/engelsoft-bacstac-ha-addon
           push: ${{ github.event_name == 'push' }}
           version: ${{ needs.prepare.outputs.version }}
 
