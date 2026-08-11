@@ -58,6 +58,7 @@ diagnostic_counters = {
     "websocket_update_snapshots": 0,
     "websocket_delta_messages": 0,
     "websocket_delta_objects": 0,
+    "websocket_delta_properties": 0,
 }
 
 
@@ -999,6 +1000,11 @@ async def websocket_writer():
                             diagnostic_counters["websocket_delta_messages"] += 1
                             diagnostic_counters["websocket_delta_objects"] += sum(
                                 len(objects) for objects in dict_to_send.values()
+                            )
+                            diagnostic_counters["websocket_delta_properties"] += sum(
+                                len(properties)
+                                for objects in dict_to_send.values()
+                                for properties in objects.values()
                             )
                     except Exception as err:
                         if socket in activeSockets:

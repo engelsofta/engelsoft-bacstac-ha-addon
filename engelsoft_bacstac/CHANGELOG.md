@@ -2,6 +2,17 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.2.18
+11/08/2026
+
+## Less chatter, more matter — BACnet has discovered the mute button
+
+## Changed
+- Forward only properties that actually changed for integration-managed BACnet targets. Complete objects no longer travel repeatedly just because one value felt chatty.
+- Suppress identical COV and polling values before they reach Home Assistant — repeated values may now enjoy a quiet retirement.
+- Add diagnostics for detected changes, discarded duplicates and transmitted WebSocket properties.
+- Keep the complete initial WebSocket snapshot so startup and reconnection still initialize every configured entity safely. We are filtering noise, not memories.
+
 # 1.2.17
 11/08/2026
 

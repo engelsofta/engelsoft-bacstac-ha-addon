@@ -129,6 +129,8 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
             "subscription_cancellations": 0,
             "duplicate_task_creation_attempts": 0,
             "managed_target_updates": 0,
+            "managed_value_changes_detected": 0,
+            "managed_duplicate_properties_suppressed": 0,
             "cov_limit_fallbacks": 0,
             "cov_silence_fallbacks": 0,
             "poll_cycles_completed": 0,
@@ -166,7 +168,9 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         self.managed_targets: set[tuple[str, str]] = set()
         self.managed_disabled_targets: set[tuple[str, str]] = set()
         self.managed_requested_modes: dict[tuple[str, str], str] = {}
-        self.pending_managed_updates: set[tuple[str, str]] = set()
+        # Changed by Engelsoft: keep property-level deltas so duplicate BACnet
+        # values are not forwarded to the Home Assistant integration.
+        self.pending_managed_updates: dict[tuple[str, str], dict[str, Any]] = {}
         self.target_status: dict[tuple[str, str], dict[str, Any]] = {}
         self.cov_fallback_tasks: dict[tuple[str, str], asyncio.Task] = {}
         self.cov_fallback_object_lists: dict[str, list[ObjectIdentifier]] = {}
@@ -1387,15 +1391,14 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         }
 
     def consume_managed_delta(self) -> dict:
-        """Return and clear changed managed objects as a nested payload."""
+        """Return and clear changed managed properties as a nested payload."""
         changed = self.pending_managed_updates
-        self.pending_managed_updates = set()
+        self.pending_managed_updates = {}
         payload: dict = {}
-        for device_id, object_id in changed:
-            object_payload = self.bacnet_device_dict.get(device_id, {}).get(object_id)
-            if object_payload is None:
+        for (device_id, object_id), property_delta in changed.items():
+            if not property_delta:
                 continue
-            payload.setdefault(device_id, {})[object_id] = object_payload
+            payload.setdefault(device_id, {})[object_id] = property_delta
         return payload
 
     async def _reconcile_managed_cov_targets(
@@ -1825,6 +1828,14 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
             )
             property_value = property_value.get_value()
 
+        device_key = f"{device_identifier[0].attr}:{device_identifier[1]}"
+        object_key = f"{object_identifier[0].attr}:{object_identifier[1]}"
+        property_key = getattr(property_identifier, "attr", str(property_identifier))
+        missing = object()
+        previous_value = self.bacnet_device_dict.get(device_key, {}).get(
+            object_key, {}
+        ).get(property_key, missing)
+
         if isinstance(property_value, list):
             prop_list: list = []
             for val in property_value:
@@ -1895,20 +1906,25 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                 },
             )
 
-        device_key = f"{device_identifier[0].attr}:{device_identifier[1]}"
         if device_key in self._active_discovery_devices:
-            object_key = f"{object_identifier[0].attr}:{object_identifier[1]}"
-            property_key = getattr(property_identifier, "attr", str(property_identifier))
             self._fresh_discovery_properties.setdefault(device_key, {}).setdefault(
                 object_key, set()
             ).add(property_key)
 
-        target = (
-            f"{device_identifier[0].attr}:{device_identifier[1]}",
-            f"{object_identifier[0].attr}:{object_identifier[1]}",
-        )
+        target = (device_key, object_key)
         if target in self.managed_targets:
-            self.pending_managed_updates.add(target)
+            current_value = self.bacnet_device_dict.get(device_key, {}).get(
+                object_key, {}
+            ).get(property_key, missing)
+            if previous_value is missing or current_value != previous_value:
+                self.pending_managed_updates.setdefault(target, {})[
+                    property_key
+                ] = current_value
+                self.subscription_diagnostics["managed_value_changes_detected"] += 1
+            else:
+                self.subscription_diagnostics[
+                    "managed_duplicate_properties_suppressed"
+                ] += 1
 
         if update_source in {"cov", "poll"}:
             self._mark_target_update(
