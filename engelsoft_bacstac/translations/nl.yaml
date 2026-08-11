@@ -9,28 +9,16 @@ configuration:
   objectIdentifier:
     name: BACnet · Apparaat-ID
     description: De identifier die je apparaat mee krijgt.
-  defaultPriority:
-    name: Schrijven · Standaardprioriteit (fallback)
-    description: Wordt gebruikt wanneer de integratie of API geen schrijfprioriteit opgeeft. Prioriteit 1 is het hoogst en 16 het laagst. 15 of 16 wordt aanbevolen.
-  managed_poll_rate:
-    name: Updates · Pollinginterval
-    description: Pollinginterval in seconden voor doelen waaraan de integratie polling toewijst. Lagere waarden zorgen voor snellere updates, maar genereren meer BACnet-verkeer.
-  managed_cov_subscription_delay_ms:
-    name: Updates · Pauze tussen COV-abonnementen
-    description: Wachttijd in milliseconden tussen COV-aanvragen. 1000 ms is één seconde. Lagere waarden bouwen sneller op, maar belasten gevoelige BACnet-apparaten meer.
-  managed_cov_fallback_timeout:
-    name: Updates · COV-controleduur
-    description: Tijd voordat een rustige controlepoll start als een bevestigd COV-abonnement niets meldt. Permanente pollingfallback volgt pas na een bewezen waardewijziging zonder COV.
   loglevel:
     name: Diagnose · Logniveau
     description: Het niveau waarop de gebeurtenissen gelogd worden.
-  maxApduLenghtAccepted: 
+  maxApduLengthAccepted:
     name: Geavanceerd · Maximale APDU-lengte
     description: Maximum hoeveelheid Application Layer Protocol Data Units toegestaan.
   segmentation:
     name: Geavanceerd · Ondersteunde segmentatie
     description: Ondersteunde type segmentatie. "segmentedBoth" als standaard.
-  vendorID:
+  vendorIdentifier:
     name: Geavanceerd · Vendor-ID
     description: Het ID van de regelaar's leverancier.
   foreignBBMD:

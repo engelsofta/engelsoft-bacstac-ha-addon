@@ -1,7 +1,7 @@
 # Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on.
 # https://developers.home-assistant.io/docs/add-ons/configuration#add-on-config
 name: Engelsoft BACstac
-version: "1.2.16"
+version: "1.2.17"
 slug: engelsoft_bacstac
 description: Engelsoft BACstac makes BACnet/IP devices available to Home Assistant through an API.
 url: "https://github.com/engelsofta/engelsoft-bacstac-ha-addon"
@@ -24,24 +24,16 @@ options:
   objectName: Engelsoft BACstac
   address: auto
   objectIdentifier: 420
-  managed_poll_rate: 10
-  managed_cov_subscription_delay_ms: 1000
-  managed_cov_fallback_timeout: 30
-  defaultPriority: 15
   loglevel: WARNING
   segmentation: segmentedBoth
 schema:
   objectName: str
   address: str
   objectIdentifier: int
-  managed_poll_rate: int(3,300)
-  managed_cov_subscription_delay_ms: int(0,30000)?
-  managed_cov_fallback_timeout: int(10,600)
-  defaultPriority: int(1,16)
   foreignBBMD: str?
   foreignTTL: int(1,65535)?
-  vendorID: int?
-  maxApduLenghtAccepted: int?
+  vendorIdentifier: int?
+  maxApduLengthAccepted: int?
   segmentation: list(segmentedBoth|segmentedTransmit|segmentedReceive|noSegmentation)?
   maxSegmentsAccepted: int?
   loglevel: list(DEBUG|INFO|WARNING|ERROR|CRITICAL|)

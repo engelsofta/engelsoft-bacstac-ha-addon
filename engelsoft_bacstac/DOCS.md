@@ -104,14 +104,10 @@ Example add-on configuration:
 objectName: Engelsoft BACstac
 address: auto
 objectIdentifier: 420
-managed_poll_rate: 10
-managed_cov_subscription_delay_ms: 1000
-managed_cov_fallback_timeout: 30
-defaultPriority: 15
 loglevel: WARNING
 segmentation: segmentedBoth
-vendorID: 15
-maxApduLenghtAccepted: 1476
+vendorIdentifier: 15
+maxApduLengthAccepted: 1476
 maxSegmentsAccepted: 64
 ```
 
@@ -128,17 +124,13 @@ If you have a subnet of 255.255.0.0 then your CIDR notation would be /16
 ### Option: `objectIdentifier` Device ID
 The Object Identifier that this device will get. This will be seen by other devices on the BACnet network. **Make sure it's unique in your network!**
 
-### Option: `defaultPriority` BACnet write priority fallback
-This priority is used only when the integration or API does not provide one.
-Low numbers have higher priority. Keep the fallback at 15 or 16 unless you
-understand how command prioritization affects the target BACnet controller.
+### Live update settings
+
+Polling interval, COV registration delay, COV verification time and fallback write priority are configured under **Devices → Operation** in the sidebar. They are stored persistently and applied without restarting the add-on.
 
 ### Options: safe update handling
 
 - Engelsoft Beacon BACnet/IP selects `cov`, `polling` or `disabled` for every target. BACstac enforces the per-device COV limit, subscription pacing and automatic polling fallback. Targets without an explicit update mode use polling for backward compatibility.
-- `managed_poll_rate`: Polling interval in seconds for integration-managed targets.
-- `managed_cov_subscription_delay_ms`: Delay in milliseconds between COV subscription requests. `1000` equals one second; for example, `250` allows four subscription attempts per second.
-- `managed_cov_fallback_timeout`: Time in seconds after a confirmed COV subscription before control polling begins. The COV subscription remains active and permanent polling fallback happens only after repeated polls prove a value change without a matching COV notification.
 
 The **Subscriptions** page shows the state of every managed target, when its COV subscription was confirmed, the last COV notification, the last poll and the age of its current value.
 
@@ -211,7 +203,7 @@ There are 5 levels of logging:
 
 Usually WARNING is sufficient.
 
-### Option: `vendorID` Vendor Identifier
+### Option: `vendorIdentifier` Vendor Identifier
 Identifier of the vendor of the interface. As we don't have an official identifier, put anything you want in here.
 
 ### Option: `segmentation` Segmentation Supported

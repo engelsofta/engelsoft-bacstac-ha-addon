@@ -2,6 +2,17 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.2.17
+11/08/2026
+
+## Changed
+- Reduced Home Assistant options to settings that require a BACnet stack restart.
+- Moved polling interval, COV pacing, COV verification and fallback write priority into live sidebar settings.
+- Corrected `maxApduLenghtAccepted` to `maxApduLengthAccepted` and standardized `vendorID` as `vendorIdentifier`, with legacy migration.
+- Added lazy object loading, device and point search, viewport-only updates, connection state, rule labels, COV capacity and limit warnings.
+- Removed EDE from normal navigation while retaining its direct page and API for compatibility.
+- Completed German UI wording and corrected malformed symbols.
+
 # 1.2.16
 11/08/2026
 

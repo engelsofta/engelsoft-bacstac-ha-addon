@@ -1,6 +1,6 @@
 <!-- Modified by engelsofta in 2026; derived from the Bepacom BACnet/IP add-on. -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<script src="{{ url_for('static', path='/js/theme.js') }}?v=1.0.0"></script>
@@ -19,9 +19,8 @@
 			</div>
 		</div>
 		<div class="div2">
-			<a href="./webapp" title="Main page where you can see all devices, objects and values."><span>▦</span> Geräte</a>
-			<a href="./subscriptions" title="Page where you can see all subscriptions."><span>◈</span> Subscriptions</a>
-			<a class="active" href="./ede" title="Page where you can see manage EDE files."><span>▤</span> EDE</a>
+			<a href="./webapp" title="Geräte, Objekte und aktuelle Werte"><span>▦</span> Geräte</a>
+			<a href="./subscriptions" title="COV- und Polling-Status"><span>◇</span> Aktualisierungen</a>
 			<div class="mode-summary mode-{{ sidebar.mode }}">
 				<div><small>AKTUALISIERUNGSSTEUERUNG</small><strong data-mode-label>{{ sidebar.label }}</strong></div>
 				<div class="mode-metrics">
@@ -32,7 +31,7 @@
 			</div>
 		</div>
 		<div class="div4">
-			<label>EDE files:</label>
+			<label>EDE-Dateien:</label>
 			{%	for file in files	%}
 			{% for key, value in file.items() %}
 			<label class="selectable-label">
@@ -44,12 +43,12 @@
 		</div>
 		<div class="div5">
 			<form id="form">
-				<label for="EDE_file">Select EDE</label>
+				<label for="EDE_file">EDE-Datei auswählen</label>
 				<input type="file" id="EDE_file">
-				<label for="EDE_StateTexts">Select StateTexts</label>
+				<label for="EDE_StateTexts">Statustexte auswählen</label>
 				<input type="file" id="EDE_StateTexts">
-				<input type="button" value="Upload Files" onclick="uploadFiles(event)" title="Send EDE Files to server">
-				<input type="button" value="Delete Selection" onclick="deleteFiles(event)" title="Delete selected EDE files">
+				<input type="button" value="Dateien hochladen" onclick="uploadFiles(event)" title="EDE-Dateien hochladen">
+				<input type="button" value="Auswahl löschen" onclick="deleteFiles(event)" title="Ausgewählte EDE-Dateien löschen">
 			</form>
 		</div>
 	</div>

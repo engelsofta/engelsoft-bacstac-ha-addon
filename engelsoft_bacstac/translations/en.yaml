@@ -9,28 +9,16 @@ configuration:
   objectIdentifier:
     name: BACnet · Device ID
     description: The identifier (number) of the interface.
-  defaultPriority:
-    name: Writing · Default priority (fallback)
-    description: Used when the integration or API does not provide a write priority. Priority 1 is highest and priority 16 is lowest. Values 15 or 16 are recommended.
-  managed_poll_rate:
-    name: Updates · Polling interval
-    description: Polling interval in seconds for targets assigned to polling by the integration. Lower values update faster but generate more BACnet traffic.
-  managed_cov_subscription_delay_ms:
-    name: Updates · Delay between COV subscriptions
-    description: Delay in milliseconds between COV subscription requests. 1000 ms equals one second. Lower values build faster but can put more load on sensitive BACnet devices.
-  managed_cov_fallback_timeout:
-    name: Updates · COV verification time
-    description: Time before a gentle control poll starts when a confirmed COV subscription sends no notification. Permanent polling fallback occurs only after a value change without COV is proven.
   loglevel:
     name: Diagnostics · Log level
     description: The severity of log messages being displayed.
-  maxApduLenghtAccepted: 
+  maxApduLengthAccepted:
     name: Advanced · Maximum accepted APDU length
     description: Maximum amount of Application Layer Protocol Data Units allowed.
   segmentation:
     name: Advanced · Supported segmentation
     description: Supported segmentation type of the interface.
-  vendorID:
+  vendorIdentifier:
     name: Advanced · Vendor identifier
     description: The vendor ID of the interface.
   foreignBBMD:

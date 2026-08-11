@@ -11,13 +11,12 @@ declare header
 declare objectname
 declare address
 declare objectIdentifier
-declare maxApduLenghtAccepted
+declare maxApduLengthAccepted
 declare segmentation
-declare vendorID
+declare vendorIdentifier
 declare foreignBBMD
 declare foreignTTL
 declare maxSegmentsAccepted
-declare defaultPriority
 
 # Functions
 
@@ -79,7 +78,11 @@ else
 fi
 
 objectIdentifier="objectIdentifier: $(bashio::config 'objectIdentifier')"
-maxApduLenghtAccepted="maxApduLengthAccepted: $(bashio::config 'maxApduLenghtAccepted' '1476')"
+if bashio::config.exists 'maxApduLengthAccepted'; then
+    maxApduLengthAccepted="maxApduLengthAccepted: $(bashio::config 'maxApduLengthAccepted')"
+else
+    maxApduLengthAccepted="maxApduLengthAccepted: $(bashio::config 'maxApduLenghtAccepted' '1476')"
+fi
 segmentation="segmentation: $(bashio::config 'segmentation' 'segmentedBoth')"
 
 if [[ -z $(bashio::config 'segmentation' 'segmentedBoth') ]]; then
@@ -88,7 +91,11 @@ else
     segmentation="segmentation: $(bashio::config 'segmentation' 'segmentedBoth')"
 fi
 
-vendorID="vendorIdentifier: $(bashio::config 'vendorID' '15')"
+if bashio::config.exists 'vendorIdentifier'; then
+    vendorIdentifier="vendorIdentifier: $(bashio::config 'vendorIdentifier')"
+else
+    vendorIdentifier="vendorIdentifier: $(bashio::config 'vendorID' '15')"
+fi
 foreignBBMD="foreignBBMD: $(bashio::config 'foreignBBMD' '-')"
 foreignTTL="foreignTTL: $(bashio::config 'foreignTTL' '255')"
 maxSegmentsAccepted="maxSegmentsAccepted: $(bashio::config 'maxSegmentsAccepted' '64')"
@@ -99,11 +106,9 @@ else
     loglevel="loglevel: $(bashio::config 'loglevel')"
 fi
 
-defaultPriority="defaultPriority: $(bashio::config 'defaultPriority')"
-
 # Generate INI file
 
-printf '%s\n' "$header" "$objectname" "$address" "$objectIdentifier" "$maxApduLenghtAccepted" "$segmentation" "$vendorID" "$foreignBBMD" "$foreignTTL" "$maxSegmentsAccepted" "$loglevel" "$defaultPriority" > /usr/bin/BACpypes.ini
+printf '%s\n' "$header" "$objectname" "$address" "$objectIdentifier" "$maxApduLengthAccepted" "$segmentation" "$vendorIdentifier" "$foreignBBMD" "$foreignTTL" "$maxSegmentsAccepted" "$loglevel" > /usr/bin/BACpypes.ini
 cat /usr/bin/BACpypes.ini
 
 printf "$(bashio::addon.ingress_url)" > /usr/bin/ingress.ini

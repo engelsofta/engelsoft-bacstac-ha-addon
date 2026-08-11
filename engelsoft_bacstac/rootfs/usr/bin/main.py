@@ -18,6 +18,7 @@ import psutil
 import uvicorn
 import webAPI
 from device_protection import load_rules
+from runtime_settings import load as load_runtime_settings
 from BACnetIOHandler import BACnetIOHandler, supports_read_property_multiple
 from bacpypes3.apdu import AbortPDU, ErrorPDU, RejectPDU
 from bacpypes3.basetypes import (Null, ObjectType, Segmentation,
@@ -108,7 +109,7 @@ async def writer_task(
             priority = queue_result[5]
 
             if not priority:
-                priority = default_write_prio
+                priority = getattr(app, "default_write_priority", default_write_prio)
 
             if property_val == None:
                 property_val = Null("null")
@@ -279,12 +280,13 @@ def get_configuration() -> tuple:
 
     # Keep accepting the legacy internal key while honoring the public
     # config.yaml option used by existing installations.
-    vendor_id = options.get("vendorID", options.get("vendorIdentifier", 15))
+    # Changed by Engelsoft: canonical names first, legacy keys migrate in memory.
+    vendor_id = options.get("vendorIdentifier", options.get("vendorID", 15))
 
     segmentation_supported = options.get("segmentation", Segmentation.noSegmentation)
 
     max_apdu = options.get(
-        "maxApduLenghtAccepted", options.get("maxApduLengthAccepted", 480)
+        "maxApduLengthAccepted", options.get("maxApduLenghtAccepted", 480)
     )
 
     max_segments = options.get("maxSegmentsAccepted", 64)
@@ -334,6 +336,8 @@ async def main():
         update_interval,
         options,
     ) = get_configuration()
+    runtime_settings = load_runtime_settings(options)
+    default_write_prio = runtime_settings["defaultPriority"]
 
     formatter = Formatter(
         "[%(asctime)-8s]|%(levelname)-8s |%(filename)-18s->%(funcName)-36s: %(message)s",
@@ -390,15 +394,14 @@ async def main():
         # Changed by Engelsoft: rules now live in /data and are managed from
         # the device sidebar. Existing add-on options are migrated once.
         addon_device_config=load_rules(options.get("devices_setup")),
-        managed_poll_rate=options.get("managed_poll_rate", 10),
+        managed_poll_rate=runtime_settings["managed_poll_rate"],
         managed_cov_subscription_delay_seconds=(
-            max(0, int(options.get("managed_cov_subscription_delay_ms", 1000)))
+            runtime_settings["managed_cov_subscription_delay_ms"]
             / 1000
         ),
-        managed_cov_fallback_timeout=options.get(
-            "managed_cov_fallback_timeout", 30
-        ),
+        managed_cov_fallback_timeout=runtime_settings["managed_cov_fallback_timeout"],
     )
+    app.default_write_priority = default_write_prio
 
     app.asap.maxApduLengthAccepted = int(max_apdu)
 

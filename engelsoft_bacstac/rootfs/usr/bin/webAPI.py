@@ -28,6 +28,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import parse_obj_as
 from device_protection import remove_rule, upsert_rule
+from runtime_settings import load as load_runtime_settings, save as save_runtime_settings
 
 # ===================================================
 # Global variables
@@ -249,12 +250,26 @@ def device_protection_payload() -> dict:
         if not str(device_id).startswith("device:"):
             continue
         override = overrides.get(device_id)
+        requested_cov = sum(
+            mode == "cov" and target[0] == device_id
+            for target, mode in getattr(application, "managed_requested_modes", {}).items()
+        )
+        active_cov = sum(
+            task.get_name().startswith(f"{device_id},")
+            and not task.done()
+            and not task.cancelling()
+            for task in getattr(application, "subscription_tasks", [])
+        )
+        address = _device_details(device_id, payload).get("address", "—")
         devices.append(
             {
                 "deviceID": device_id,
                 "properties": _device_details(device_id, payload),
                 "rule": override or default,
                 "has_override": override is not None,
+                "connection_status": "online" if address != "—" else "cached",
+                "cov_requested": requested_cov,
+                "cov_active": active_cov,
             }
         )
     discovered_ids = {device["deviceID"] for device in devices}
@@ -276,9 +291,24 @@ def device_protection_payload() -> dict:
                 },
                 "rule": override,
                 "has_override": True,
+                "connection_status": "offline",
+                "cov_requested": 0,
+                "cov_active": 0,
             }
         )
     return {"default": default, "devices": devices}
+
+
+def runtime_settings_payload() -> dict:
+    application = bacnet_application
+    if application is None:
+        return load_runtime_settings()
+    return {
+        "managed_poll_rate": application.managed_poll_rate,
+        "managed_cov_subscription_delay_ms": round(application.managed_cov_subscription_delay_seconds * 1000),
+        "managed_cov_fallback_timeout": application.managed_cov_fallback_timeout,
+        "defaultPriority": getattr(application, "default_write_priority", 15),
+    }
 
 
 @app.get("/webapp", response_class=HTMLResponse, tags=["Webpages"])
@@ -306,6 +336,46 @@ async def webapp(request: Request):
 async def get_device_protection():
     """Return persistent per-device safety settings."""
     return device_protection_payload()
+
+
+@app.get("/apiv1/runtime-settings", tags=["apiv1"])
+async def get_runtime_settings():
+    return runtime_settings_payload()
+
+
+@app.put("/apiv1/runtime-settings", tags=["apiv1"])
+async def set_runtime_settings(request: Request):
+    application = bacnet_application
+    if application is None:
+        return Response(status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
+    try:
+        settings = save_runtime_settings(await request.json())
+    except (TypeError, ValueError, OSError) as err:
+        return Response(content=str(err), status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
+    application.managed_poll_rate = settings["managed_poll_rate"]
+    application.managed_cov_subscription_delay_seconds = settings["managed_cov_subscription_delay_ms"] / 1000
+    application.managed_cov_fallback_timeout = settings["managed_cov_fallback_timeout"]
+    application.default_write_priority = settings["defaultPriority"]
+    await application.reapply_managed_targets()
+    return settings
+
+
+@app.get("/apiv1/devices/{device_id}/objects", tags=["apiv1"])
+async def get_device_objects(device_id: str, query: str = ""):
+    """Load object metadata only when a device is expanded."""
+    payload = bacnet_device_dict.get(device_id)
+    if payload is None:
+        return Response(status_code=status.HTTP_404_NOT_FOUND)
+    needle = query.casefold().strip()
+    result = []
+    for object_id, properties in payload.items():
+        if object_id == device_id or not isinstance(properties, dict):
+            continue
+        searchable = f"{object_id} {properties.get('objectName', '')} {properties.get('description', '')}".casefold()
+        if needle and needle not in searchable:
+            continue
+        result.append({"object_id": object_id, "properties": jsonable_encoder(properties)})
+    return {"device_id": device_id, "objects": result}
 
 
 @app.put("/apiv1/device-protection/{device_id}", tags=["apiv1"])

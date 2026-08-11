@@ -9,28 +9,16 @@ configuration:
   objectIdentifier:
     name: BACnet · Geräte-ID
     description: Eindeutige BACnet-Gerätekennung dieser Schnittstelle.
-  defaultPriority:
-    name: Schreiben · Standardpriorität (Fallback)
-    description: Wird verwendet, wenn Integration oder API keine eigene Schreibpriorität mitsendet. Priorität 1 ist die höchste, Priorität 16 die niedrigste. Empfohlen sind 15 oder 16.
-  managed_poll_rate:
-    name: Aktualisierung · Polling-Intervall
-    description: Abfrageintervall in Sekunden für Ziele, denen die Integration Polling zuweist. Kleinere Werte liefern schnellere Aktualisierungen, erzeugen aber mehr BACnet-Datenverkehr.
-  managed_cov_subscription_delay_ms:
-    name: Aktualisierung · Abstand zwischen COV-Anmeldungen
-    description: Wartezeit in Millisekunden zwischen zwei COV-Anmeldungen. 1000 ms entsprechen einer Sekunde. Kleinere Werte beschleunigen den Aufbau, können empfindliche BACnet-Geräte aber stärker belasten.
-  managed_cov_fallback_timeout:
-    name: Aktualisierung · COV-Prüfzeit
-    description: Zeit bis zum Start eines schonenden Kontroll-Polls, wenn nach einer bestätigten COV-Anmeldung keine Meldung eintrifft. Erst nach nachgewiesener Wertänderung ohne COV wird dauerhaft auf Polling gewechselt.
   loglevel:
     name: Diagnose · Protokollierungsstufe
     description: Bestimmt, wie ausführlich Meldungen im Add-on-Protokoll ausgegeben werden.
-  maxApduLenghtAccepted:
+  maxApduLengthAccepted:
     name: Erweitert · Maximale APDU-Länge
     description: Maximale Länge einer akzeptierten BACnet-APDU.
   segmentation:
     name: Erweitert · Unterstützte Segmentierung
     description: Segmentierungsart, die von dieser BACnet-Schnittstelle unterstützt wird.
-  vendorID:
+  vendorIdentifier:
     name: Erweitert · Hersteller-ID
     description: BACnet-Herstellerkennung der Schnittstelle.
   foreignBBMD:
