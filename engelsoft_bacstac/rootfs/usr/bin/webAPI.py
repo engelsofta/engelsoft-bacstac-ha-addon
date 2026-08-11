@@ -27,6 +27,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import parse_obj_as
+from device_protection import remove_rule, upsert_rule
 
 # ===================================================
 # Global variables
@@ -206,6 +207,80 @@ def sidebar_status() -> dict:
     }
 
 
+def _device_details(device_id: str, payload: dict) -> dict:
+    """Return compact display properties for one discovered BACnet device."""
+    device_object = payload.get(device_id, {}) if isinstance(payload, dict) else {}
+    object_count = max(0, len(payload) - (1 if device_id in payload else 0))
+    properties = {
+        "name": device_object.get("objectName", device_id),
+        "vendor": device_object.get("vendorName", "—"),
+        "model": device_object.get("modelName", "—"),
+        "firmware": device_object.get(
+            "firmwareRevision", device_object.get("applicationSoftwareVersion", "—")
+        ),
+        "status": device_object.get("systemStatus", "—"),
+        "segmentation": device_object.get("segmentationSupported", "—"),
+        "address": device_object.get("address", "—"),
+        "objects": object_count,
+    }
+    application = bacnet_application
+    if application is not None:
+        try:
+            address = application.dev_to_addr(ObjectIdentifier(device_id))
+            if address is not None:
+                properties["address"] = str(address)
+        except Exception:
+            pass
+    return {key: jsonable_encoder(value) for key, value in properties.items()}
+
+
+def device_protection_payload() -> dict:
+    """Build device properties and effective protection rules for the UI."""
+    application = bacnet_application
+    rules = list(getattr(application, "addon_device_config", []) or [])
+    default = next((rule for rule in rules if rule.get("deviceID") == "all"), {})
+    overrides = {
+        rule.get("deviceID"): rule
+        for rule in rules
+        if rule.get("deviceID") and rule.get("deviceID") != "all"
+    }
+    devices = []
+    for device_id, payload in sorted(bacnet_device_dict.items()):
+        if not str(device_id).startswith("device:"):
+            continue
+        override = overrides.get(device_id)
+        devices.append(
+            {
+                "deviceID": device_id,
+                "properties": _device_details(device_id, payload),
+                "rule": override or default,
+                "has_override": override is not None,
+            }
+        )
+    discovered_ids = {device["deviceID"] for device in devices}
+    for device_id, override in sorted(overrides.items()):
+        if device_id in discovered_ids:
+            continue
+        devices.append(
+            {
+                "deviceID": device_id,
+                "properties": {
+                    "name": "Nicht aktuell erreichbar",
+                    "vendor": "—",
+                    "model": "—",
+                    "firmware": "—",
+                    "status": "Offline / nicht entdeckt",
+                    "segmentation": "—",
+                    "address": "—",
+                    "objects": 0,
+                },
+                "rule": override,
+                "has_override": True,
+            }
+        )
+    return {"default": default, "devices": devices}
+
+
 @app.get("/webapp", response_class=HTMLResponse, tags=["Webpages"])
 async def webapp(request: Request):
     """Index and main page of the add-on."""
@@ -222,8 +297,47 @@ async def webapp(request: Request):
             "request": request,
             "bacnet_devices": dict_to_send,
             "sidebar": sidebar_status(),
+            "device_protection": device_protection_payload(),
         },
     )
+
+
+@app.get("/apiv1/device-protection", tags=["apiv1"])
+async def get_device_protection():
+    """Return persistent per-device safety settings."""
+    return device_protection_payload()
+
+
+@app.put("/apiv1/device-protection/{device_id}", tags=["apiv1"])
+async def set_device_protection(device_id: str, request: Request):
+    """Persist a rule and re-apply the current integration target plan live."""
+    application = bacnet_application
+    if application is None:
+        return Response(status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
+    try:
+        values = await request.json()
+        if not isinstance(values, dict):
+            raise TypeError("Expected a JSON object")
+        application.addon_device_config = upsert_rule(
+            list(application.addon_device_config), device_id, values
+        )
+    except (TypeError, ValueError, OSError) as err:
+        return Response(content=str(err), status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
+    await application.reapply_managed_targets()
+    return device_protection_payload()
+
+
+@app.delete("/apiv1/device-protection/{device_id}", tags=["apiv1"])
+async def delete_device_protection(device_id: str):
+    """Remove a device override and immediately use the global defaults."""
+    application = bacnet_application
+    if application is None:
+        return Response(status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
+    application.addon_device_config = remove_rule(
+        list(application.addon_device_config), device_id
+    )
+    await application.reapply_managed_targets()
+    return device_protection_payload()
 
 
 @app.get("/subscriptions", response_class=HTMLResponse, tags=["Webpages"])

@@ -17,6 +17,7 @@ from typing import TypeVar
 import psutil
 import uvicorn
 import webAPI
+from device_protection import load_rules
 from BACnetIOHandler import BACnetIOHandler, supports_read_property_multiple
 from bacpypes3.apdu import AbortPDU, ErrorPDU, RejectPDU
 from bacpypes3.basetypes import (Null, ObjectType, Segmentation,
@@ -386,7 +387,9 @@ async def main():
         foreign_ip=foreign_ip,
         ttl=int(foreign_ttl),
         update_event=webAPI.events.val_updated_event,
-        addon_device_config=options.get("devices_setup"),
+        # Changed by Engelsoft: rules now live in /data and are managed from
+        # the device sidebar. Existing add-on options are migrated once.
+        addon_device_config=load_rules(options.get("devices_setup")),
         managed_poll_rate=options.get("managed_poll_rate", 10),
         managed_cov_subscription_delay_seconds=(
             max(0, int(options.get("managed_cov_subscription_delay_ms", 1000)))

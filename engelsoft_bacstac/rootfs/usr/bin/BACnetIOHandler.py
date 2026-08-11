@@ -1351,6 +1351,28 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         )
         return self._managed_target_response(reconcile_scheduled=True)
 
+    async def reapply_managed_targets(self) -> dict:
+        """Rebuild the current COV/poll plan after a protection rule change."""
+        targets = [
+            (device_id, object_id, mode)
+            for (device_id, object_id), mode in self.managed_requested_modes.items()
+        ]
+        # A lifetime change must renew even when target names stay identical.
+        # Wait for the old context managers to unsubscribe before rebuilding.
+        current_names = set(self.managed_cov_task_names)
+        current_tasks = [
+            task
+            for task in self.subscription_tasks
+            if task.get_name() in current_names and not task.done()
+        ]
+        for task in current_tasks:
+            task.cancel()
+        if current_tasks:
+            await asyncio.gather(*current_tasks, return_exceptions=True)
+        # Force plan comparison to notice changed safety limits and rules.
+        self.managed_requested_modes = {}
+        return await self.replace_managed_targets(targets)
+
     def _managed_target_response(self, **extra) -> dict:
         """Return a stable summary for integrations and the WebUI."""
         return {

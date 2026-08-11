@@ -227,7 +227,7 @@ ul { margin: 0; padding: 0; list-style: none; }
 }
 .cov-confirmation-summary b { color: inherit; font-size: 11px; }
 .div5::before {
-  content: "Aktion";
+  content: "Geräteeigenschaften & Schutz";
   display: block;
   margin: 1px 2px 14px;
   padding-bottom: 12px;
@@ -252,7 +252,7 @@ ul { margin: 0; padding: 0; list-style: none; }
 .cov-selection-summary b { color: var(--gold-light); }
 .div5 form > br { display: none; }
 .div5 label { margin-top: 5px; color: var(--muted); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
-input[type="text"], input[type="file"], select {
+input[type="text"], input[type="number"], input[type="file"], select {
   width: 100%;
   min-height: 40px;
   padding: 9px 11px;
@@ -265,6 +265,23 @@ input[type="text"], input[type="file"], select {
 }
 input[type="file"] { padding: 7px; color: var(--muted); font-size: 12px; }
 input:focus, select:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-soft); }
+
+.device-panel-heading { margin-bottom: 12px; }
+.device-panel-heading small { display: block; color: var(--muted); font-size: 8px; font-weight: 800; letter-spacing: .12em; }
+.device-panel-heading strong { display: block; margin-top: 2px; color: var(--text); font-size: 17px; }
+.device-panel-heading span { color: var(--gold-light); font-size: 10px; }
+.device-properties { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 14px; }
+.device-properties > div { min-width: 0; padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); }
+.device-properties small { display: block; color: var(--muted); font-size: 8px; font-weight: 750; text-transform: uppercase; }
+.device-properties strong { display: block; margin-top: 2px; overflow-wrap: anywhere; font-size: 11px; }
+.device-properties p { grid-column: 1 / -1; margin: 0; padding: 10px; color: var(--muted); border: 1px dashed var(--line); border-radius: 8px; font-size: 11px; }
+.field-help { margin-top: -4px; color: var(--muted); font-size: 9px; }
+.switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); text-transform: none !important; }
+.switch-row span { min-width: 0; }
+.switch-row b { display: block; color: var(--text); font-size: 11px; }
+.switch-row small { display: block; margin-top: 2px; color: var(--muted); font-size: 9px; font-weight: 500; }
+.switch-row input { width: 17px; height: 17px; flex: 0 0 17px; accent-color: var(--gold); }
+.form-message { min-height: 16px; color: var(--success); font-size: 10px; }
 
 .button, input[type="button"] {
   width: 100%;

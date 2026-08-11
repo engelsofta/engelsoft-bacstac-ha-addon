@@ -21,21 +21,6 @@ configuration:
   managed_cov_fallback_timeout:
     name: Aktualisierung · COV-Prüfzeit
     description: Zeit bis zum Start eines schonenden Kontroll-Polls, wenn nach einer bestätigten COV-Anmeldung keine Meldung eintrifft. Erst nach nachgewiesener Wertänderung ohne COV wird dauerhaft auf Polling gewechselt.
-  deviceID:
-    name: Geräteschutz · BACnet-Gerät
-    description: BACnet-Gerätekennung im Format device:123. Der Wert all gilt als Standardregel für alle Geräte.
-  CoV_lifetime:
-    name: Geräteschutz · COV-Laufzeit
-    description: Gültigkeitsdauer einer COV-Anmeldung in Sekunden. Das Add-on erneuert sie automatisch.
-  CoV_limit:
-    name: Geräteschutz · Maximale COV-Anmeldungen
-    description: Obergrenze gleichzeitig angelegter COV-Abonnements je BACnet-Gerät. Weitere Objekte werden automatisch gepollt. 0 deaktiviert COV für das Gerät.
-  resub_on_iam:
-    name: Geräteschutz · COV nach I-Am erneuern
-    description: Prüft nach einer erneuten I-Am-Meldung des Geräts die COV-Anmeldungen und stellt fehlende wieder her.
-  reread_on_iam:
-    name: Geräteschutz · Objektliste nach I-Am prüfen
-    description: Prüft nach einer I-Am-Meldung, ob sich die Objektliste des Geräts verändert hat.
   loglevel:
     name: Diagnose · Protokollierungsstufe
     description: Bestimmt, wie ausführlich Meldungen im Add-on-Protokoll ausgegeben werden.
@@ -57,8 +42,5 @@ configuration:
   maxSegmentsAccepted:
     name: Erweitert · Maximale Segmentanzahl
     description: Maximale Anzahl von Segmenten, die in einer BACnet-Nachricht akzeptiert wird.
-  devices_setup:
-    name: BACnet · Geräteschutz
-    description: Sicherheitsgrenzen und Wiederherstellungsverhalten je BACnet-Gerät. Für normale Installationen genügt die vorhandene Standardregel all.
 network:
   47808/udp: BACnet/IP-Port

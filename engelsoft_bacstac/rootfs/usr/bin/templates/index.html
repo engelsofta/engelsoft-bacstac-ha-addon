@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="{{ url_for('static', path='/js/theme.js') }}?v=1.0.0"></script>
     <script defer src="{{ url_for('static', path='/js/mode-status.js') }}?v=1.2.0"></script>
-    <link href="{{ url_for('static', path='/css/styles.css') }}?v=1.2.3-ui" rel="stylesheet">
+    <link href="{{ url_for('static', path='/css/styles.css') }}?v=1.2.16-ui" rel="stylesheet">
     <title>Engelsoft BACstac</title>
 </head>
 <body>
@@ -40,7 +40,7 @@
                 {% for device in bacnet_devices %}
                 <li id="{{ device }}" class="device-tree">
                     <input type="checkbox" id="checkbox-{{ device }}" onclick="cool(event)">
-                    <label for="checkbox-{{device}}" class="device_select">{{ device }}</label>
+                    <label for="checkbox-{{device}}" class="device_select" data-device-id="{{ device }}">{{ device }}</label>
                     <ul>
                         {% for object in bacnet_devices[device] %}
                         <li id="{{ device }}-{{object}}" class="object-tree">
@@ -62,23 +62,32 @@
             </ul>
         </div>
         <div class="div5">
-            <form id="form">
-                <label for="device">Select Device:</label>
-                <select id="device" name="device" title="Device you want to write to."></select>
-                <br>
-                <label for="object">Select Object:</label>
-                <select id="object" name="object" title="Object you want to write to."></select>
-                <br>
-                <label for="property">Property identifier:</label>
-                <input type="text" id="property" name="property" title="Property to write to. Write in camelCase, i.e. presentValue or outOfService.">
-                <br>
-                <label for="value">Value:</label>
-                <input type="text" id="value" name="value" title="Value to write to property.">
-                <br>
-                <label for="priority">Priority:</label>
-                <input type="text" id="priority" name="priority" title="Priority to write with.">
-                <br>
-                <input type="button" value="Write" onclick="submitForm()" title="Send Write Request.">
+            <div class="device-panel-heading">
+                <small>GERÄT</small>
+                <strong id="selected-device-title">Standard für alle Geräte</strong>
+                <span id="rule-source">Globale Schutzregel</span>
+            </div>
+            <div id="device-properties" class="device-properties"></div>
+            <form id="protection-form">
+                <label for="protection-device">Gerät auswählen</label>
+                <select id="protection-device" name="device"></select>
+                <label for="cov-lifetime">COV-Laufzeit in Sekunden</label>
+                <input type="number" id="cov-lifetime" min="60" max="28800" required>
+                <small class="field-help">Danach erneuert das Add-on die Anmeldung automatisch.</small>
+                <label for="cov-limit">Maximale COV-Anmeldungen</label>
+                <input type="number" id="cov-limit" min="0" max="1000" required>
+                <small class="field-help">Weitere COV-Ziele wechseln zum schonenden Polling. 0 deaktiviert COV.</small>
+                <label class="switch-row" for="resub-on-iam">
+                    <span><b>COV nach I-Am erneuern</b><small>Fehlende Anmeldungen nach einem Geräteneustart wiederherstellen.</small></span>
+                    <input type="checkbox" id="resub-on-iam">
+                </label>
+                <label class="switch-row" for="reread-on-iam">
+                    <span><b>Objektliste nach I-Am prüfen</b><small>Bei einer I-Am-Meldung die Objekte des Geräts erneut einlesen.</small></span>
+                    <input type="checkbox" id="reread-on-iam">
+                </label>
+                <div id="protection-message" class="form-message" role="status"></div>
+                <input type="button" value="Übernehmen" onclick="saveProtection()">
+                <input type="button" id="reset-protection" value="Gerätestandard verwenden" onclick="resetProtection()">
             </form>
         </div>
     </div>
@@ -93,7 +102,7 @@
 
                     devicedict = data;
                     updateProperties(devicedict)
-                    fillOptions()
+                    refreshProtection()
                 }
                 catch (error) {
                     console.error(error);
@@ -109,7 +118,10 @@
             try {
                 devicedict = JSON.parse(event.data)
                 updateProperties(devicedict)
-                fillOptions()
+                const discovered = Object.keys(devicedict).filter(key => key.startsWith("device:"));
+                if (discovered.some(deviceId => !protectionData.devices.some(item => item.deviceID === deviceId))) {
+                    refreshProtection();
+                }
             }
             catch (error) {
                 console.log(error);
@@ -135,8 +147,7 @@
         document.addEventListener("DOMContentLoaded", function () {
             updateCheckboxes();
         });
-        let devices = [];
-        let objects = [];
+        let protectionData = {{ device_protection | tojson }};
 
         function cool(event) {
 
@@ -194,74 +205,101 @@
         }
 
         function updateCheckboxes() {
+            if (!devicedict) return;
             for (let device in devicedict) {
                 cool2(device)
             }
         }
 
-        function fillOptions() {
-            let selectDevice = document.getElementById("device");
-            let selectObject = document.getElementById("object");
-            for (let device in devicedict) {
-                if (!devices.includes(device)) {
-                    devices.push(device);
-                    let option = document.createElement("option");
-                    option.value = device;
-                    option.text = device;
-                    selectDevice.appendChild(option);
-                }
-                for (let object in devicedict[device]) {
-                    if (!objects.includes(object)) {
-                        objects.push(object);
-                        let option = document.createElement("option");
-                        option.value = object;
-                        option.text = object;
-                        selectObject.appendChild(option);
-                    }
-                }
-            }
-            //console.log(selectDevice)
-            //console.log(selectObject)
-        }
+        const protectionSelect = document.getElementById("protection-device");
 
-        function submitForm() {
-            let device = document.getElementById("device").value;
-            let object = document.getElementById("object").value;
-            let property = document.getElementById("property").value;
-            let value = document.getElementById("value").value;
-            let priority = document.getElementById("priority").value;
-            let url = `./apiv2/${device}/${object}/${property}?`;
-
-            if (value) {
-                url += `value=${value}`;
-            }
-
-            if (priority) {
-                if (value) {
-                    url += `&priority=${priority}`;
-                } else {
-                    url += `priority=${priority}`;
-                }
-            }
-
-            let data = {
-                property: value
-            };
-            fetch(url, {
-                method: "POST",
-                body: JSON.stringify(data),
-                headers: {
-                    "Content-Type": "application/json"
-                }
-            }).then((response) => {
-                if (response.status == 200) {
-                    alert("Write request is being processed!")
-
-                } else {
-                    alert("Error during parsing of the write inputs!")
-                }
+        function populateProtectionDevices() {
+            const selected = protectionSelect.value || "all";
+            protectionSelect.innerHTML = '<option value="all">Standard für alle Geräte</option>';
+            protectionData.devices.forEach((device) => {
+                const option = document.createElement("option");
+                option.value = device.deviceID;
+                option.textContent = `${device.deviceID} · ${device.properties.name}`;
+                protectionSelect.appendChild(option);
             });
+            protectionSelect.value = [...protectionSelect.options].some(o => o.value === selected) ? selected : "all";
         }
+
+        function selectedProtectionDevice() {
+            return protectionData.devices.find(device => device.deviceID === protectionSelect.value);
+        }
+
+        function escapeHtml(value) {
+            const element = document.createElement("span");
+            element.textContent = String(value ?? "—");
+            return element.innerHTML;
+        }
+
+        function renderProtection() {
+            const device = selectedProtectionDevice();
+            const rule = device ? device.rule : protectionData.default;
+            const isDefault = protectionSelect.value === "all";
+            document.getElementById("selected-device-title").textContent = isDefault ? "Standard für alle Geräte" : protectionSelect.value;
+            document.getElementById("rule-source").textContent = isDefault ? "Globale Schutzregel" : (device.has_override ? "Eigene Geräteregel" : "Verwendet den globalen Standard");
+            document.getElementById("cov-lifetime").value = rule.CoV_lifetime;
+            document.getElementById("cov-limit").value = rule.CoV_limit;
+            document.getElementById("resub-on-iam").checked = rule.resub_on_iam;
+            document.getElementById("reread-on-iam").checked = rule.reread_on_iam;
+            document.getElementById("reset-protection").hidden = isDefault || !device.has_override;
+            const properties = device ? device.properties : null;
+            document.getElementById("device-properties").innerHTML = properties ? [
+                ["Name", properties.name], ["Adresse", properties.address],
+                ["Hersteller", properties.vendor], ["Modell", properties.model],
+                ["Firmware", properties.firmware], ["Status", properties.status],
+                ["Objekte", properties.objects], ["Segmentierung", properties.segmentation]
+            ].map(([label, value]) => `<div><small>${label}</small><strong>${escapeHtml(value)}</strong></div>`).join("") :
+                '<p>Diese Regel gilt für alle Geräte ohne eigene Einstellung.</p>';
+        }
+
+        async function refreshProtection() {
+            try {
+                const response = await fetch('./apiv1/device-protection');
+                if (response.ok) protectionData = await response.json();
+                populateProtectionDevices();
+                renderProtection();
+            } catch (error) { console.debug(error); }
+        }
+
+        async function saveProtection() {
+            const form = document.getElementById("protection-form");
+            if (!form.reportValidity()) return;
+            const message = document.getElementById("protection-message");
+            message.textContent = "Wird übernommen …";
+            const payload = {
+                CoV_lifetime: Number(document.getElementById("cov-lifetime").value),
+                CoV_limit: Number(document.getElementById("cov-limit").value),
+                resub_on_iam: document.getElementById("resub-on-iam").checked,
+                reread_on_iam: document.getElementById("reread-on-iam").checked
+            };
+            const response = await fetch(`./apiv1/device-protection/${encodeURIComponent(protectionSelect.value)}`, {
+                method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload)
+            });
+            if (!response.ok) { message.textContent = `Speichern fehlgeschlagen: ${await response.text()}`; return; }
+            protectionData = await response.json();
+            message.textContent = "Gespeichert und im laufenden Betrieb übernommen.";
+            populateProtectionDevices(); renderProtection();
+        }
+
+        async function resetProtection() {
+            const response = await fetch(`./apiv1/device-protection/${encodeURIComponent(protectionSelect.value)}`, {method: "DELETE"});
+            if (!response.ok) return;
+            protectionData = await response.json();
+            document.getElementById("protection-message").textContent = "Eigene Regel entfernt; globaler Standard ist aktiv.";
+            populateProtectionDevices(); renderProtection();
+        }
+
+        protectionSelect.addEventListener("change", renderProtection);
+        document.querySelectorAll(".device_select").forEach(label => label.addEventListener("click", () => {
+            protectionSelect.value = label.dataset.deviceId;
+            renderProtection();
+        }));
+        populateProtectionDevices();
+        renderProtection();
     </script>
 </body>
 </html>

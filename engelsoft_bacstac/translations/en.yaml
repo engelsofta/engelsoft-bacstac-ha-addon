@@ -21,21 +21,6 @@ configuration:
   managed_cov_fallback_timeout:
     name: Updates · COV verification time
     description: Time before a gentle control poll starts when a confirmed COV subscription sends no notification. Permanent polling fallback occurs only after a value change without COV is proven.
-  deviceID:
-    name: Device protection · BACnet device
-    description: BACnet device identifier in device:123 format. The value all defines the default rule for every device.
-  CoV_lifetime:
-    name: Device protection · COV lifetime
-    description: Lifetime of a COV subscription in seconds. The add-on renews it automatically.
-  CoV_limit:
-    name: Device protection · Maximum COV subscriptions
-    description: Maximum number of simultaneous COV subscriptions for each BACnet device. Additional objects are polled automatically. Set to 0 to disable COV for that device.
-  resub_on_iam:
-    name: Device protection · Restore COV after I-Am
-    description: Checks COV subscriptions after a new I-Am message and restores missing subscriptions.
-  reread_on_iam:
-    name: Device protection · Check objects after I-Am
-    description: Checks whether the device object list changed after an I-Am message.
   loglevel:
     name: Diagnostics · Log level
     description: The severity of log messages being displayed.
@@ -57,8 +42,5 @@ configuration:
   maxSegmentsAccepted:
     name: Advanced · Maximum accepted segments
     description: The maximum amount of segments accepted in a message.
-  devices_setup:
-    name: BACnet · Device protection
-    description: Safety limits and recovery behavior for each BACnet device. Most installations only need the existing all default rule.
 network:
   47808/udp: BACnet port.

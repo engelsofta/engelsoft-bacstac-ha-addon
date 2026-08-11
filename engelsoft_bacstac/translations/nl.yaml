@@ -21,21 +21,6 @@ configuration:
   managed_cov_fallback_timeout:
     name: Updates · COV-controleduur
     description: Tijd voordat een rustige controlepoll start als een bevestigd COV-abonnement niets meldt. Permanente pollingfallback volgt pas na een bewezen waardewijziging zonder COV.
-  deviceID:
-    name: Apparaatbeveiliging · BACnet-apparaat
-    description: BACnet apparaat-ID in het formaat device:123. De waarde all is de standaardregel voor alle apparaten.
-  CoV_lifetime:
-    name: Apparaatbeveiliging · COV-looptijd
-    description: Geldigheidsduur van een COV-abonnement in seconden. De add-on vernieuwt dit automatisch.
-  CoV_limit:
-    name: Apparaatbeveiliging · Maximum COV-abonnementen
-    description: Maximaal aantal gelijktijdige COV-abonnementen per BACnet-apparaat. Overige objecten worden automatisch gepolld. 0 schakelt COV voor dit apparaat uit.
-  resub_on_iam:
-    name: Apparaatbeveiliging · COV herstellen na I-Am
-    description: Controleert COV-abonnementen na een I-Am-bericht en herstelt ontbrekende abonnementen.
-  reread_on_iam:
-    name: Apparaatbeveiliging · Objecten controleren na I-Am
-    description: Controleert na een I-Am-bericht of de objectlijst is gewijzigd.
   loglevel:
     name: Diagnose · Logniveau
     description: Het niveau waarop de gebeurtenissen gelogd worden.
@@ -57,8 +42,5 @@ configuration:
   maxSegmentsAccepted:
     name: Geavanceerd · Maximaal aantal segmenten
     description: De maximale hoeveelheid segmenten er in een BACnet bericht mogen zitten.
-  devices_setup:
-    name: BACnet · Apparaatbeveiliging
-    description: Veiligheidslimieten en herstelgedrag per BACnet-apparaat. Meestal volstaat de bestaande standaardregel all.
 network:
   47808/udp: BACnet poort.

@@ -2,6 +2,17 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.2.16
+11/08/2026
+
+## Changed
+- Moved device protection from the Home Assistant add-on options into the Devices sidebar.
+- Added persistent global defaults and per-device overrides for COV lifetime, COV limit and I-Am recovery behavior.
+- Added a device information panel with vendor, model, firmware, status, address, object count and segmentation.
+- Removed the manual BACnet write form from the sidebar while retaining the write API required by the Home Assistant integration.
+- Existing `devices_setup` rules are imported into the new persistent store on first start when still present in the previous options.
+- Protection changes reconcile the active COV and polling plan immediately without restarting the add-on.
+
 # 1.2.15
 09/08/2026
 

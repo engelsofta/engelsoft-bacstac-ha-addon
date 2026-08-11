@@ -108,16 +108,6 @@ managed_poll_rate: 10
 managed_cov_subscription_delay_ms: 1000
 managed_cov_fallback_timeout: 30
 defaultPriority: 15
-devices_setup:
-  - deviceID: all
-    CoV_lifetime: 600
-    CoV_limit: 20
-    resub_on_iam: true
-    reread_on_iam: false
-  - deviceID: device:1835087
-    CoV_lifetime: 600
-    resub_on_iam: true
-    reread_on_iam: false
 loglevel: WARNING
 segmentation: segmentedBoth
 vendorID: 15
@@ -184,27 +174,16 @@ The integration can send an `update_mode` with each target to
 The WebUI status strip shows the current COV, polling, fallback and disabled
 target counts on every page.
 
-### Option: `devices_setup` Device protection
+### Device protection
 
-The `devices_setup` configuration contains only device protection settings.
-Each entry defines a device ID, COV safety limits and the response to a new
-I-Am message. Object selection and transport remain controlled exclusively by
-the Home Assistant integration.
+Device protection is configured on the **Devices** page of the add-on sidebar. The global rule applies to every discovered BACnet device. Selecting a device lets you create an override for that device. Object selection and transport remain controlled by the Home Assistant integration.
 
-```yaml
-devices_setup:
-  - deviceID: device:1835087
-    CoV_lifetime: 600
-    CoV_limit: 20
-    resub_on_iam: true
-    reread_on_iam: false
-```
+- **COV lifetime** controls how long a subscription remains valid before it is renewed (60–28800 seconds).
+- **Maximum COV subscriptions** limits simultaneous subscriptions per device (0–1000). Additional targets use polling; 0 disables COV for that device.
+- **Renew COV after I-Am** restores missing subscriptions after a device announces itself again.
+- **Check object list after I-Am** re-reads the device object list after an I-Am message.
 
-- `deviceID` This key contains the device identifier (in "device:xxxx" format where xxxx is the number) for the device you want the following options to count for. A special "all" key will make the settings below a general configuration.
-- `CoV_lifetime` This key contains the lifetime for each CoV subscription made. This value is in seconds and can be between 60 and 28800. The add-on will automatically resubscribe once the lifetime has passed.
-- `CoV_limit` limits simultaneous COV subscriptions for this device. The default is 20. Additional integration-managed targets automatically use polling. Set it to 0 to disable COV for the device.
-- `resub_on_iam` Resubscribe to an object with CoV when an I-Am request has been received. When the lifetime of the object has passed, enabling this key will result in the resubscription of a CoV subscription. Otherwise it'll just update any new information of the device.
-- `reread_on_iam` Reread the object list when an I-Am request has been received. This key will result in all objects of this device to be read again.
+Changes are stored persistently and applied while the add-on is running. The Home Assistant integration's write API remains available even though the manual write form was removed from the sidebar.
 
 The following properties will be read each poll:
 - presentValue
