@@ -209,7 +209,7 @@ app = FastAPI(
     lifespan=lifespan,
     title="Engelsoft BACstac API",
     description=description,
-    version="1.3.0b1",
+    version="1.3.0",
     contact={
         "name": "Engelsoft BACstac",
         "url": "https://github.com/engelsofta/engelsoft-bacstac-ha-addon/issues",

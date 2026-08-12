@@ -2,7 +2,7 @@
 
 # Engelsoft BACstac
 
-> **API V2 BETA (1.3.0b1):** Diese Version führt den neuen versionierten,
+> **NEU: API V2 (1.3.0):** Diese Version führt den neuen versionierten,
 > bidirektionalen Integrationskanal ein. Sie benötigt für API V2 eine kompatible
 > Version von **Engelsoft Beacon BACnet/IP**. API V1 bleibt während der
 > Übergangsphase weiterhin verfügbar.

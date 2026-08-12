@@ -87,7 +87,7 @@ Fortunately, you only need to write the value for writing properties.
 
 ### API V2
 
-> **API V2 BETA:** Version 1.3.0b1 introduces the new, versioned integration
+> **API V2:** Version 1.3.0 introduces the new, versioned integration
 > protocol. Use it with a compatible Engelsoft Beacon BACnet/IP integration.
 > The existing API V1 endpoints remain available during the transition.
 
