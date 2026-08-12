@@ -30,5 +30,8 @@ configuration:
   maxSegmentsAccepted:
     name: Geavanceerd · Maximaal aantal segmenten
     description: De maximale hoeveelheid segmenten er in een BACnet bericht mogen zitten.
+  api_token:
+    name: API V2 · Toegangstoken
+    description: Optioneel gedeeld geheim voor de API V2 WebSocket-verbinding. Stel dezelfde waarde in bij de Engelsoft Beacon-integratie.
 network:
   47808/udp: BACnet poort.

@@ -87,11 +87,29 @@ Fortunately, you only need to write the value for writing properties.
 
 ### API V2
 
-API V2 is in progress and improves the usability of the add-on.
+> **API V2 BETA:** Version 1.3.0b1 introduces the new, versioned integration
+> protocol. Use it with a compatible Engelsoft Beacon BACnet/IP integration.
+> The existing API V1 endpoints remain available during the transition.
+
+API V2 provides protocol negotiation, capability discovery, an optional shared
+token, a bidirectional WebSocket channel, compact point-change events, managed
+targets, writes, priority release, diagnostics and explicit resynchronization.
+
+#### Discovery and health
+
+- `GET /health` - service and BACnet readiness
+- `GET /bepacom/info` - product, protocol version and supported capabilities
+
+#### WebSocket
+
+- `WS /ws/v2` - API V2 handshake, initial snapshot, point events and commands
+
+When `api_token` is configured in the add-on options, the integration must send
+the same token in its API V2 `hello` message.
 
 #### POST
 
-- /apiv1/{deviceid}/{objectid}/{propertyid}	- Write a property value to an object in a specific device.
+- `/apiv2/{deviceid}/{objectid}/{property}` - write a property value to an object
 
 
 ## Configuration

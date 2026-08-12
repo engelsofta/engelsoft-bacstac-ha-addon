@@ -2,6 +2,11 @@
 
 # Engelsoft BACstac
 
+> **API V2 BETA (1.3.0b1):** Diese Version führt den neuen versionierten,
+> bidirektionalen Integrationskanal ein. Sie benötigt für API V2 eine kompatible
+> Version von **Engelsoft Beacon BACnet/IP**. API V1 bleibt während der
+> Übergangsphase weiterhin verfügbar.
+
 Engelsoft BACstac stellt die BACnet/IP-Verbindung für **Engelsoft Beacon
 BACnet/IP** bereit. Das Add-on erkennt BACnet-Geräte, liest deren Objekte und
 Werte, verwaltet COV-Abonnements beziehungsweise Polling und stellt die Daten der
