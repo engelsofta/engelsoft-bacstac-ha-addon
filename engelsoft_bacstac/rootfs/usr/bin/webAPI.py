@@ -37,7 +37,9 @@ from runtime_settings import load as load_runtime_settings, save as save_runtime
 bacnet_device_dict: dict
 bacnet_application: Application | None = None
 activeSockets: list = []
+activeV2Sockets: list = []
 websocket_broadcast_task: asyncio.Task | None = None
+protocol_sequence = 0
 EDE_files: list = []
 sub_list: list = []
 
@@ -59,7 +61,42 @@ diagnostic_counters = {
     "websocket_delta_messages": 0,
     "websocket_delta_objects": 0,
     "websocket_delta_properties": 0,
+    "protocol_v2_connections": 0,
+    "protocol_v2_commands": 0,
+    "protocol_v2_errors": 0,
 }
+
+PROTOCOL_VERSION = 2
+PROTOCOL_CAPABILITIES = [
+    "inventory", "managed_targets", "managed_snapshot", "point_events",
+    "write_property", "release_priority", "diagnostics", "resync",
+]
+
+
+def _configured_api_token() -> str:
+    """Read the optional shared secret from Home Assistant app options."""
+    try:
+        with open("/data/options.json", encoding="utf-8") as options_file:
+            return str(json.load(options_file).get("api_token") or "")
+    except (OSError, ValueError, TypeError):
+        return ""
+
+
+def protocol_info() -> dict:
+    """Return the stable compatibility contract used by integrations."""
+    return {
+        "product": "engelsoft-bacstac",
+        "app_version": app.version,
+        "protocol_version": PROTOCOL_VERSION,
+        "protocol_versions": [PROTOCOL_VERSION],
+        "capabilities": PROTOCOL_CAPABILITIES,
+        "bacnet": {
+            "ready": bacnet_application is not None,
+            "device_count": sum(
+                1 for key in bacnet_device_dict if str(key).startswith("device:")
+            ),
+        },
+    }
 
 
 def deep_update(mapping: dict, *updating_mappings: dict) -> dict:
@@ -172,7 +209,7 @@ app = FastAPI(
     lifespan=lifespan,
     title="Engelsoft BACstac API",
     description=description,
-    version="1.4.1",
+    version="1.3.0",
     contact={
         "name": "Engelsoft BACstac",
         "url": "https://github.com/engelsofta/engelsoft-bacstac-ha-addon/issues",
@@ -191,6 +228,18 @@ app.mount(
 )
 
 templates = Jinja2Templates(directory=f"{path_str}/templates")
+
+
+@app.get("/health", tags=["Protocol V2"])
+async def health():
+    """Small endpoint that remains useful when the event channel is down."""
+    return {"status": "ok", "bacnet_ready": bacnet_application is not None}
+
+
+@app.get("/bepacom/info", tags=["Protocol V2"])
+async def bepacom_info():
+    """Advertise product identity, protocol version and optional features."""
+    return protocol_info()
 
 
 def sidebar_status() -> dict:
@@ -518,6 +567,7 @@ async def get_subscription_diagnostics():
         "tracked_subscription_tasks": len(tasks),
         "duplicate_active_task_names": len(names) - len(set(names)),
         "active_websocket_clients": len(activeSockets),
+        "active_protocol_v2_clients": len(activeV2Sockets),
         **diagnostic_counters,
         **getattr(application, "subscription_diagnostics", {}),
         "inventory_cache": getattr(
@@ -972,6 +1022,109 @@ async def websocket_endpoint(websocket: WebSocket):
             return
 
 
+def _v2_result(request_id: Any, payload: Any = None, *, error: dict | None = None) -> dict:
+    message = {"type": "result", "id": request_id, "success": error is None}
+    if error is None:
+        message["payload"] = payload
+    else:
+        message["error"] = error
+    return message
+
+
+async def _v2_set_targets(payload: dict) -> dict:
+    """Apply managed targets sent over protocol V2."""
+    application = bacnet_application
+    if application is None:
+        raise RuntimeError("BACnet application is still starting")
+    targets = []
+    for target in payload.get("targets", []):
+        device_id = str(target["device_id"])
+        object_id = str(target["object_id"])
+        mode = str(target.get("update_mode", target.get("mode", "polling"))).lower()
+        mode = {"push": "cov", "subscribe": "cov", "poll": "polling", "off": "disabled"}.get(mode, mode)
+        if mode not in {"cov", "polling", "disabled"}:
+            raise ValueError(f"unsupported update mode: {mode}")
+        if ":" not in device_id and "," not in device_id:
+            device_id = f"device:{device_id}"
+        targets.append((ObjectIdentifier(device_id), ObjectIdentifier(object_id), mode))
+    return await application.replace_managed_targets(targets)
+
+
+async def _v2_write(payload: dict) -> dict:
+    """Queue one BACnet property write sent over protocol V2."""
+    device_id = str(payload["device_id"])
+    if ":" not in device_id and "," not in device_id:
+        device_id = f"device:{device_id}"
+    await events.write_queue.put([
+        ObjectIdentifier(device_id),
+        ObjectIdentifier(str(payload["object_id"])),
+        PropertyIdentifier(str(payload.get("property", "presentValue"))),
+        payload.get("value"),
+        payload.get("array_index"),
+        payload.get("priority"),
+    ])
+    return {"accepted": True, "queued": True}
+
+
+@app.websocket("/ws/v2")
+async def websocket_v2(websocket: WebSocket):
+    """Bidirectional, versioned integration channel."""
+    global websocket_broadcast_task
+    await websocket.accept()
+    activeV2Sockets.append(websocket)
+    diagnostic_counters["protocol_v2_connections"] += 1
+    try:
+        hello = await asyncio.wait_for(websocket.receive_json(), timeout=10)
+        configured_token = _configured_api_token()
+        if configured_token and hello.get("token") != configured_token:
+            await websocket.send_json({"type": "error", "error": {"code": "authentication_failed", "message": "Invalid API token"}})
+            await websocket.close(code=1008)
+            return
+        offered_versions = hello.get("protocol_versions")
+        if not isinstance(offered_versions, list):
+            offered_versions = [hello.get("protocol_version")]
+        if hello.get("type") != "hello" or PROTOCOL_VERSION not in offered_versions:
+            await websocket.send_json({"type": "error", "error": {"code": "protocol_incompatible", "message": "Protocol V2 required"}})
+            await websocket.close(code=1002)
+            return
+        await websocket.send_json({"type": "welcome", **protocol_info()})
+        await websocket.send_json({"type": "event", "event": "snapshot", "sequence": protocol_sequence, "payload": jsonable_encoder(websocket_snapshot())})
+
+        if websocket_broadcast_task is None or websocket_broadcast_task.done():
+            websocket_broadcast_task = asyncio.create_task(websocket_writer(), name="websocket-broadcaster")
+
+        while True:
+            message = await websocket.receive_json()
+            if message.get("type") != "command":
+                continue
+            diagnostic_counters["protocol_v2_commands"] += 1
+            request_id = message.get("id")
+            command = message.get("command")
+            payload = message.get("payload") or {}
+            try:
+                if command in {"get_inventory", "resync"}:
+                    result = websocket_snapshot()
+                elif command == "set_targets":
+                    result = await _v2_set_targets(payload)
+                elif command in {"write_property", "release_priority"}:
+                    if command == "release_priority":
+                        payload = {**payload, "property": "presentValue", "value": None}
+                    result = await _v2_write(payload)
+                elif command == "get_diagnostics":
+                    result = await get_subscription_diagnostics()
+                else:
+                    raise ValueError(f"unsupported command: {command}")
+                await websocket.send_json(_v2_result(request_id, jsonable_encoder(result)))
+            except Exception as err:
+                diagnostic_counters["protocol_v2_errors"] += 1
+                await websocket.send_json(_v2_result(request_id, error={"code": "command_failed", "message": str(err)}))
+    except (WebSocketDisconnect, asyncio.CancelledError, asyncio.TimeoutError):
+        pass
+    finally:
+        if websocket in activeV2Sockets:
+            activeV2Sockets.remove(websocket)
+
+
 async def websocket_writer():
     """Broadcast updates once to every connected WebSocket client."""
     try:
@@ -1010,6 +1163,21 @@ async def websocket_writer():
                         if socket in activeSockets:
                             activeSockets.remove(socket)
                         LOGGER.debug(f"Removed disconnected WebSocket: {err}")
+                global protocol_sequence
+                protocol_sequence += 1
+                v2_message = {
+                    "type": "event",
+                    "event": "point_changes",
+                    "sequence": protocol_sequence,
+                    "payload": data_to_send,
+                }
+                for socket in list(activeV2Sockets):
+                    try:
+                        await socket.send_json(v2_message)
+                    except Exception as err:
+                        if socket in activeV2Sockets:
+                            activeV2Sockets.remove(socket)
+                        LOGGER.debug(f"Removed disconnected V2 WebSocket: {err}")
             else:
                 await asyncio.sleep(1)
 

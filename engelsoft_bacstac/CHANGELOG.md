@@ -2,6 +2,27 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.3.0
+12/08/2026
+
+## **API V2 — Same BACnet, now with an actual conversation**
+
+> **Important:** This release introduces the new **API V2** integration protocol.
+> Pair it with a compatible Engelsoft Beacon BACnet/IP integration. API V1
+> remains available during the transition, so nobody is pushed off the bus
+> while V2 is still choosing the music.
+
+## Added
+- Added protocol and capability discovery through `/bepacom/info` plus a compact `/health` endpoint.
+- Added the bidirectional `/ws/v2` channel with a versioned hello/welcome handshake, full initial snapshot, sequenced point-change events and explicit results.
+- Added API V2 commands for inventory, resynchronization, managed targets, BACnet writes, priority release and diagnostics.
+- Added an optional shared API token for the V2 WebSocket handshake.
+- Added API V2 connection, command, error and active-client diagnostics.
+
+## Compatibility
+- Kept the existing API V1 endpoints and WebSocket channel available during the migration.
+- Hardened protocol negotiation for missing or malformed version lists.
+
 # 1.2.18
 11/08/2026
 
