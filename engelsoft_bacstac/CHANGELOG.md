@@ -2,6 +2,15 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.3.2
+13/08/2026
+
+## **The last German holdout has surrendered**
+
+## Fixed
+- Localized the CSS-generated device properties and protection heading in the English web interface.
+- Refreshed the stylesheet cache key so the corrected heading appears immediately after updating.
+
 # 1.3.1
 13/08/2026
 

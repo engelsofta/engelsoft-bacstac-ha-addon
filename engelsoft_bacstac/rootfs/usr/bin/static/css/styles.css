@@ -238,6 +238,7 @@ ul { margin: 0; padding: 0; list-style: none; }
   letter-spacing: .13em;
   text-transform: uppercase;
 }
+html[lang="en"] .div5::before { content: "Device properties & protection"; }
 
 .div5 form { display: grid; gap: 7px; }
 .cov-selection-summary {
