@@ -2,6 +2,17 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.3.1
+13/08/2026
+
+## **BACnet now speaks English — no Duolingo streak required**
+
+## Added
+- Added automatic English localization for the device, update-status and EDE pages when Home Assistant uses English.
+- Added `?lang=en` as an explicit English-language override.
+- Kept the existing German interface for German Home Assistant sessions.
+- Localized dynamically refreshed target states, runtime messages, controls, tooltips and placeholders as well as the initial page content.
+
 # 1.3.0
 12/08/2026
 
