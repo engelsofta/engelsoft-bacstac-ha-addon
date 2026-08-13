@@ -5,7 +5,6 @@
 [Deutsch](README.de.md) | **English**
 
 [![Release](https://img.shields.io/github/v/release/engelsofta/engelsoft-bacstac-ha-addon?display_name=tag&cacheSeconds=300)](https://github.com/engelsofta/engelsoft-bacstac-ha-addon/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/engelsofta/engelsoft-bacstac-ha-addon/total?label=Downloads&color=c49a3a)](https://github.com/engelsofta/engelsoft-bacstac-ha-addon/releases/latest)
 [![Build](https://github.com/engelsofta/engelsoft-bacstac-ha-addon/actions/workflows/build.yaml/badge.svg)](https://github.com/engelsofta/engelsoft-bacstac-ha-addon/actions/workflows/build.yaml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
