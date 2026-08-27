@@ -31,7 +31,7 @@ configuration:
     name: Erweitert · Maximale Segmentanzahl
     description: Maximale Anzahl von Segmenten, die in einer BACnet-Nachricht akzeptiert wird.
   api_token:
-    name: API V2 · Zugriffstoken
-    description: Optionales gemeinsames Kennwort für die API-V2-WebSocket-Verbindung. Derselbe Wert muss in der Engelsoft-Beacon-Integration eingetragen werden.
+    name: Integration · Zugriffstoken
+    description: Optionales gemeinsames Kennwort für die interne Verbindung zu Engelsoft Beacon. Derselbe Wert muss in der Integration eingetragen werden.
 network:
   47808/udp: BACnet/IP-Port

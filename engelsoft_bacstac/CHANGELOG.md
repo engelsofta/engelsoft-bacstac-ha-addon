@@ -2,6 +2,21 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.3.4
+27/08/2026
+
+## **The API left the brochure, not the building**
+
+## Changed
+- Reworked the documentation around the actual BACstac and Engelsoft Beacon architecture.
+- Removed the obsolete REST sensor walkthrough and the public endpoint catalogue; port 8099 is now clearly described as the internal integration connection.
+- Renamed the API-token configuration labels to integration access-token labels in German, English and Dutch.
+- Updated the add-on descriptions and installation guidance to present Engelsoft Beacon as the supported Home Assistant entity layer.
+
+## Fixed
+- Corrected the documented `maxApduLengthAccepted` option name and its built-in fallback.
+- Replaced the unsafe suggestion to leave UDP port 47808 empty with accurate BACnet port-conflict guidance.
+
 # 1.3.3
 27/08/2026
 

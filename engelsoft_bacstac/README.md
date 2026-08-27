@@ -2,10 +2,9 @@
 
 # Engelsoft BACstac
 
-> **NEU: API V2 (1.3.0):** Diese Version führt den neuen versionierten,
-> bidirektionalen Integrationskanal ein. Sie benötigt für API V2 eine kompatible
-> Version von **Engelsoft Beacon BACnet/IP**. API V1 bleibt während der
-> Übergangsphase weiterhin verfügbar.
+> **Wichtig:** BACstac und **Engelsoft Beacon BACnet/IP** gehören zusammen.
+> Die Verbindung zwischen beiden Komponenten läuft lokal innerhalb von Home
+> Assistant und muss nicht als öffentliche API eingerichtet werden.
 
 Engelsoft BACstac stellt die BACnet/IP-Verbindung für **Engelsoft Beacon
 BACnet/IP** bereit. Das Add-on erkennt BACnet-Geräte, liest deren Objekte und

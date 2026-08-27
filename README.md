@@ -10,7 +10,7 @@
 
 Engelsoft BACstac connects a BACnet/IP network to Home Assistant. The add-on
 handles BACnet communication and exposes discovered devices, objects and value
-changes through a local API for **Engelsoft Beacon BACnet/IP**.
+changes through a local integration connection for **Engelsoft Beacon BACnet/IP**.
 
 ## Highlights
 

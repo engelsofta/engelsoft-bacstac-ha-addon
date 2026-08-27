@@ -31,7 +31,7 @@ configuration:
     name: Advanced · Maximum accepted segments
     description: The maximum amount of segments accepted in a message.
   api_token:
-    name: API V2 · Access token
-    description: Optional shared secret for the API V2 WebSocket connection. Configure the same value in the Engelsoft Beacon integration.
+    name: Integration · Access token
+    description: Optional shared secret for the internal Engelsoft Beacon connection. Configure the same value in the integration.
 network:
   47808/udp: BACnet port.

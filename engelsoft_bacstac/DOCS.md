@@ -24,92 +24,24 @@ This edition is maintained by [engelsofta](https://github.com/engelsofta). It is
 
 ## Usage
 
-After installing the add-on, there are 2 ways you can turn data into Home Assistant entities.
+Use the accompanying [Engelsoft Beacon BACnet/IP integration](https://github.com/engelsofta/ha-bepacom-bacnet) to create and manage Home Assistant devices and entities. The integration also controls which BACnet objects use COV, polling or no updates and sends supported write commands back through BACstac.
 
-### Integration
+## Internal integration connection
 
-The first and recommended way is to use the accompanying [Engelsoft Beacon BACnet/IP integration](https://github.com/engelsofta/ha-bepacom-bacnet).
-Installation instructions are included in the README.md file. The installation is straightforward, like any other custom integration.
+BACstac provides a local HTTP/WebSocket interface on TCP port `8099`. This
+interface is required for communication with Engelsoft Beacon BACnet/IP and is
+not intended as a separate public API or as a replacement for the companion
+integration. Access is restricted to Home Assistant, loopback and the add-on
+host addresses.
 
-### RESTful Sensor
+Protocol V2 carries inventory, point changes, managed update targets, writes,
+priority releases and diagnostics between the two components. Legacy protocol
+endpoints remain in the program for compatibility, but new installations should
+use Engelsoft Beacon instead of configuring REST sensors or calling endpoints
+manually.
 
-The second way to use this add-on to get data into Home Assistant is through the [RESTful Sensor](https://www.home-assistant.io/integrations/sensor.rest/) or through [RESTful](https://www.home-assistant.io/integrations/rest).
-These are Home Assistant native integrations that will do requests to API endpoints. This has to be configured in your Configuration.yaml file.
-An example of setting up one RESTful sensor:
-
-```
-sensor:
-  - platform: rest
-    name: Humidity
-    state_class: measurement
-    unit_of_measurement: "%"
-    method: GET
-    resource: http://<app-hostname>:8099/apiv1/device:100/analogInput:1/presentValue
-```
-
-
-## API Points
-
-You'll be able to find all API points in the Web UI. All outside access to the API and Web UI is blocked. 
-Only through Home Assistant the API can be accessed. 
-This means everything inside Home Assistant is allowed to communicate with the add-on while other devices are not.
-
-### API V1
-
-**Device Identifiers** get written as "device:number", so if a device has an identifier of 100, the notation for API will be "device:100".
-
-**Object Identifiers** apply the same notation. The object name will be camelCase. An example notation for an AnalogInput 1 would be "analogInput:1".
-
-**Property Identifiers** also apply camelCase logic. An object identifier will be written as "objectIdentifier". 
-Fortunately, you only need to write the value for writing properties.
-
-#### GET
-
-- /apiv1/json								- Return a full list of all device data.
-- /apiv1/command/whois						- Make the add-on do a Who Is request.
-- /apiv1/command/iam						- Make the add-on do an I Am request.
-- /apiv1/command/readall					- Make the add-on read everything.
-- /apiv1/commission/ede					    - Read uploaded EDE files.
-- /apiv1/{deviceid}							- Retrieve all data from a specific device.
-- /apiv1/{deviceid}/{objectid}				- Retrieve all data from an object from a specific device.
-- /apiv1/{deviceid}/{objectid}/{propertyid}	- Retrieve a property value from an object in a specific device.
-
-#### POST
-
-- /apiv1/commission/ede						- Post EDE files
-- /apiv1/{deviceid}/{objectid}				- Write data to be written to a BACnet object
-- /apiv1/subscribe/{deviceid}/{objectid}	- Upload an EDE file
-
-#### DELETE
-
-- /apiv1/commission/ede						- Remove an EDE file with the corresponding device identifier
-- /apiv1/subscribe/{deviceid}/{objectid}	- Remove a CoV subscription
-
-### API V2
-
-> **API V2:** Version 1.3.0 introduces the new, versioned integration
-> protocol. Use it with a compatible Engelsoft Beacon BACnet/IP integration.
-> The existing API V1 endpoints remain available during the transition.
-
-API V2 provides protocol negotiation, capability discovery, an optional shared
-token, a bidirectional WebSocket channel, compact point-change events, managed
-targets, writes, priority release, diagnostics and explicit resynchronization.
-
-#### Discovery and health
-
-- `GET /health` - service and BACnet readiness
-- `GET /bepacom/info` - product, protocol version and supported capabilities
-
-#### WebSocket
-
-- `WS /ws/v2` - API V2 handshake, initial snapshot, point events and commands
-
-When `api_token` is configured in the add-on options, the integration must send
-the same token in its API V2 `hello` message.
-
-#### POST
-
-- `/apiv2/{deviceid}/{objectid}/{property}` - write a property value to an object
+If an `api_token` is configured, enter the same token in Engelsoft Beacon. The
+token is never required for BACnet devices themselves.
 
 
 ## Configuration
@@ -127,6 +59,7 @@ segmentation: segmentedBoth
 vendorIdentifier: 15
 maxApduLengthAccepted: 1476
 maxSegmentsAccepted: 64
+api_token: ""
 ```
 
 ### Option: `objectName` Device Name
@@ -141,6 +74,9 @@ If you have a subnet of 255.255.0.0 then your CIDR notation would be /16
 
 ### Option: `objectIdentifier` Device ID
 The Object Identifier that this device will get. This will be seen by other devices on the BACnet network. **Make sure it's unique in your network!**
+
+### Option: `api_token` Integration Access Token
+Optional shared secret for the internal connection to Engelsoft Beacon BACnet/IP. Configure the same token in both components, or leave it empty in both.
 
 ### Live update settings
 
@@ -170,16 +106,9 @@ discovery pass and activates a short per-device backoff, preventing an
 unresponsive or resource-limited gateway from being hammered by the remaining
 inventory requests.
 
-The integration can send an `update_mode` with each target to
-`POST /apiv1/managed/targets`:
-
-```json
-{"targets": [
-  {"device_id": "device:21", "object_id": "analogInput:403", "update_mode": "cov"},
-  {"device_id": "device:21", "object_id": "analogInput:404", "update_mode": "polling"},
-  {"device_id": "device:21", "object_id": "analogInput:405", "update_mode": "disabled"}
-]}
-```
+Engelsoft Beacon sends the selected `cov`, `polling` or `disabled` mode for
+each managed target through the internal Protocol V2 connection. No manual connection
+configuration is required.
 
 The WebUI status strip shows the current COV, polling, fallback and disabled
 target counts on every page.
@@ -193,7 +122,7 @@ Device protection is configured on the **Devices** page of the add-on sidebar. T
 - **Renew COV after I-Am** restores missing subscriptions after a device announces itself again.
 - **Check object list after I-Am** re-reads the device object list after an I-Am message.
 
-Changes are stored persistently and applied while the add-on is running. The Home Assistant integration's write API remains available even though the manual write form was removed from the sidebar.
+Changes are stored persistently and applied while the add-on is running. Writes requested by Engelsoft Beacon remain available even though the manual write form was removed from the sidebar.
 
 The following properties will be read each poll:
 - presentValue
@@ -237,23 +166,23 @@ This is usually the case when using Read Property Multiple requests.
 ### Option: `maxSegmentsAccepted` Maximum Segments Accepted
 The amount of segments that the device can accept at most for a single service request. Default is 64 segments.
 
-### Option: `maxApduLength` Maximum APDU Length Accepted
+### Option: `maxApduLengthAccepted` Maximum APDU Length Accepted
 Maximum size a BACnet message/segment is allowed to be. 
-A common BACnet/IP value and the default for the add-on is 1476, and a common BACnet/MSTP value is 480.
+The built-in fallback is `480`. A value of `1476` is common for BACnet/IP and can be configured when supported by the network and devices.
 
 
 ### Network port: `47808/UDP`
-BACnet/IP port. The add-on seems to work if you leave this empty. Feel free to set it to empty if opening it causes issues.
+BACnet/IP uses UDP port `47808` by default. Keep this port available to BACstac and do not run another BACnet stack on the same Home Assistant host and port.
 
 ## Problems
 
-### I can't start the add-on when my Node-Red is also running
+### I can't start the add-on when my Node-RED is also running
 
-If you're using Node-Red for BACnet applications, chances are very high it's also using the BACnet port 47808.
-This is causing a conflict between te add-ons, as we need the 47808 port as well for our BACnet/IP duties.
-Removing the BACnet part from your Node-Red should solve this issue. 
-You could also try to remove all ports to see if this works, but this hasn't been tested.
-If this doesn't work, please check the webserver port isn't conflicting with another add-on either.
+Node-RED or another standalone BACnet integration may already be using UDP port
+`47808`. Only one BACnet stack can bind this address and port on the Home
+Assistant host. Stop or reconfigure the competing BACnet application before
+starting BACstac. Changing the integration port `8099` does not resolve a
+BACnet UDP port conflict.
 
 
 ## Credits
