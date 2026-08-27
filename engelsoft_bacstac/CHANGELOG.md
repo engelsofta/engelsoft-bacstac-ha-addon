@@ -2,6 +2,16 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.3.3
+27/08/2026
+
+## **The documentation finally updated its address book**
+
+## Fixed
+- Replaced the remaining legacy integration links with the correct Engelsoft Beacon BACnet/IP repository.
+- Added direct companion-integration links to the English, German and add-on installation guides.
+- Made the migration path harder to miss, so nobody is sent sightseeing through the old Bepacom neighborhood.
+
 # 1.3.2
 13/08/2026
 
