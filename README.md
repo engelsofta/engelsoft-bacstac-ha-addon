@@ -65,7 +65,7 @@ BACnet communication separate from Home Assistant's device and entity model.
 
 4. Install **Engelsoft BACstac**.
 5. Configure the BACnet/IP connection and start the add-on.
-6. Set up **Engelsoft Beacon BACnet/IP** in Home Assistant.
+6. Set up [**Engelsoft Beacon BACnet/IP**](https://github.com/engelsofta/ha-bepacom-bacnet) in Home Assistant.
 
 See the [add-on documentation](engelsoft_bacstac/DOCS.md) for detailed option
 descriptions.

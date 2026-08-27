@@ -33,7 +33,7 @@ Anmeldung Werte aus, wechselt das betroffene Objekt automatisch auf Polling.
 ## Wichtig: Integration und Add-on gehören zusammen
 
 BACstac übernimmt die Kommunikation mit dem BACnet-Netzwerk. Die Integration
-**Engelsoft Beacon BACnet/IP** erzeugt daraus die Geräte und Entitäten in Home
+[**Engelsoft Beacon BACnet/IP**](https://github.com/engelsofta/ha-bepacom-bacnet) erzeugt daraus die Geräte und Entitäten in Home
 Assistant. Das Add-on selbst exportiert bewusst keine Home-Assistant-Entitäten.
 
 Nach der Installation des Add-ons muss daher zusätzlich Engelsoft Beacon

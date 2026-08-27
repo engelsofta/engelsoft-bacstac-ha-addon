@@ -5,7 +5,7 @@ Engelsoft BACstac is intended to be a bridge between the BACnet/IP network and H
 
 The goal of this add-on is to add BACnet functionality to Home Assistant so these devices can be displayed on the dashboard.
 
-The add-on is not directly responsible for generating entities in Home Assistant. For that, use the accompanying [BACnet integration](https://github.com/Bepacom-Raalte/Bepacom-BACnet-IP-Integration/tree/main).
+The add-on is not directly responsible for generating entities in Home Assistant. For that, use the accompanying [Engelsoft Beacon BACnet/IP integration](https://github.com/engelsofta/ha-bepacom-bacnet).
 
 This add-on works on Home Assistant OS as well as Home Assistant Supervised.
 
@@ -28,7 +28,7 @@ After installing the add-on, there are 2 ways you can turn data into Home Assist
 
 ### Integration
 
-The first and recommended way is to use the accompanying [BACnet integration](https://github.com/Bepacom-Raalte/Bepacom-BACnet-IP-Integration/tree/main).
+The first and recommended way is to use the accompanying [Engelsoft Beacon BACnet/IP integration](https://github.com/engelsofta/ha-bepacom-bacnet).
 Installation instructions are included in the README.md file. The installation is straightforward, like any other custom integration.
 
 ### RESTful Sensor

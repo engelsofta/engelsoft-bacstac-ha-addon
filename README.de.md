@@ -68,7 +68,7 @@ und Home-Assistant-Darstellung sauber voneinander getrennt.
 
 4. Installiere **Engelsoft BACstac**.
 5. Konfiguriere die BACnet/IP-Verbindung und starte das Add-on.
-6. Richte anschließend **Engelsoft Beacon BACnet/IP** in Home Assistant ein.
+6. Richte anschließend [**Engelsoft Beacon BACnet/IP**](https://github.com/engelsofta/ha-bepacom-bacnet) in Home Assistant ein.
 
 Ausführliche Hinweise zu den Optionen stehen in der
 [Add-on-Dokumentation](engelsoft_bacstac/DOCS.md).
