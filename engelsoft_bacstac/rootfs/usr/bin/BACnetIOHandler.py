@@ -5,6 +5,7 @@ Modified by engelsofta in 2026; derived from the Bepacom BACnet/IP add-on.
 
 import asyncio
 import time
+import zlib
 from ast import List
 from logging import config
 from math import e, isinf, isnan
@@ -127,6 +128,15 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
             "cov_values_received": 0,
             "subscription_failures": 0,
             "subscription_cancellations": 0,
+            "stable_subscriber_ids_created": 0,
+            "cov_capacity_rejections": 0,
+            "cov_capacity_retries_scheduled": 0,
+            "cov_capacity_retries_started": 0,
+            "cov_capacity_retries_recovered": 0,
+            "shutdown_unsubscribe_sent": 0,
+            "shutdown_unsubscribe_confirmed": 0,
+            "shutdown_unsubscribe_failed": 0,
+            "shutdown_unsubscribe_timed_out": 0,
             "duplicate_task_creation_attempts": 0,
             "managed_target_updates": 0,
             "managed_value_changes_detected": 0,
@@ -176,6 +186,12 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         self.cov_fallback_object_lists: dict[str, list[ObjectIdentifier]] = {}
         self.cov_fallback_device_tasks: dict[str, asyncio.Task] = {}
         self.cov_watchdog_tasks: dict[tuple[str, str], asyncio.Task] = {}
+        self.cov_capacity_retry_tasks: dict[tuple[str, str], asyncio.Task] = {}
+        self.cov_capacity_retry_attempts: dict[tuple[str, str], int] = {}
+        self._active_cov_subscriptions: dict[
+            tuple[str, str], tuple[Address, int, ObjectIdentifier]
+        ] = {}
+        self._shutting_down = False
         # Changed by Engelsoft: discovery is serialized and paced because some
         # BACnet gateways become unreliable when requests arrive in bursts.
         # Runtime COV and managed polling do not use this semaphore.
@@ -691,6 +707,91 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
             status["cov_verification_value"] = None
             status["cov_verification_mismatches"] = 0
 
+    @staticmethod
+    def _stable_subscriber_process_identifier(
+        device_identifier: ObjectIdentifier,
+        object_identifier: ObjectIdentifier,
+    ) -> int:
+        """Return a stable, non-zero COV subscriber ID for one target."""
+        key = (
+            f"{device_identifier[0].attr}:{device_identifier[1]}/"
+            f"{object_identifier[0].attr}:{object_identifier[1]}"
+        ).encode("ascii")
+        return (zlib.crc32(key) % 0xFFFFFFFE) + 1
+
+    @staticmethod
+    def _is_cov_capacity_error(error: Exception) -> bool:
+        message = str(error).lower()
+        return (
+            "no-space-to-add-list-element" in message
+            or "no space to add list element" in message
+        )
+
+    def _schedule_cov_capacity_retry(
+        self,
+        device_identifier: ObjectIdentifier,
+        object_identifier: ObjectIdentifier,
+        confirmed_notification: bool,
+        lifetime: int | None,
+    ) -> None:
+        """Retry a capacity-rejected managed COV after stale entries can expire."""
+        target = self._target_key(device_identifier, object_identifier)
+        if self._shutting_down or self.managed_requested_modes.get(target) != "cov":
+            return
+        existing = self.cov_capacity_retry_tasks.get(target)
+        if existing is not None and not existing.done():
+            return
+
+        attempt = self.cov_capacity_retry_attempts.get(target, 0) + 1
+        self.cov_capacity_retry_attempts[target] = attempt
+        base_delay = max(60, int(lifetime or self.default_subscription_lifetime))
+        backoff = min(3600, base_delay * (2 ** min(attempt - 1, 3)))
+        jitter = zlib.crc32(f"{target[0]}/{target[1]}/{attempt}".encode()) % 31
+        delay = backoff + jitter
+        status = self._ensure_target_status(target)
+        status["cov_retry_attempt"] = attempt
+        status["cov_retry_at"] = time.time() + delay
+        self.subscription_diagnostics["cov_capacity_retries_scheduled"] += 1
+        task = asyncio.create_task(
+            self._retry_cov_after_capacity_error(
+                device_identifier,
+                object_identifier,
+                confirmed_notification,
+                lifetime,
+                delay,
+            ),
+            name=f"cov-capacity-retry-{target[0]}-{target[1]}",
+        )
+        self.cov_capacity_retry_tasks[target] = task
+
+    async def _retry_cov_after_capacity_error(
+        self,
+        device_identifier: ObjectIdentifier,
+        object_identifier: ObjectIdentifier,
+        confirmed_notification: bool,
+        lifetime: int | None,
+        delay: int,
+    ) -> None:
+        target = self._target_key(device_identifier, object_identifier)
+        try:
+            await asyncio.sleep(delay)
+            if self._shutting_down or self.managed_requested_modes.get(target) != "cov":
+                return
+            if self.cov_capacity_retry_tasks.get(target) is asyncio.current_task():
+                self.cov_capacity_retry_tasks.pop(target, None)
+            self.subscription_diagnostics["cov_capacity_retries_started"] += 1
+            await self.create_subscription_task(
+                device_identifier=device_identifier,
+                object_identifier=object_identifier,
+                confirmed_notifications=confirmed_notification,
+                lifetime=lifetime,
+            )
+        except asyncio.CancelledError:
+            return
+        finally:
+            if self.cov_capacity_retry_tasks.get(target) is asyncio.current_task():
+                self.cov_capacity_retry_tasks.pop(target, None)
+
     def _promote_cov_verification_to_fallback(
         self,
         target: tuple[str, str],
@@ -866,6 +967,10 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
 
     def _cancel_target_runtime(self, target: tuple[str, str]) -> None:
         self._cancel_cov_fallback(target)
+        retry = self.cov_capacity_retry_tasks.pop(target, None)
+        if retry is not None and not retry.done():
+            retry.cancel()
+        self.cov_capacity_retry_attempts.pop(target, None)
         watchdog = self.cov_watchdog_tasks.pop(target, None)
         if watchdog is not None and not watchdog.done():
             watchdog.cancel()
@@ -2559,12 +2664,17 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         status["last_error"] = None
 
         unsubscribe_cov_request = None
+        subscriber_process_identifier = self._stable_subscriber_process_identifier(
+            device_identifier,
+            object_identifier,
+        )
+        self.subscription_diagnostics["stable_subscriber_ids_created"] += 1
 
         try:
             async with self.change_of_value(
                 address=device_address,
                 monitored_object_identifier=object_identifier,
-                subscriber_process_identifier=None,
+                subscriber_process_identifier=subscriber_process_identifier,
                 issue_confirmed_notifications=confirmed_notification,
                 lifetime=lifetime,
             ) as subscription:
@@ -2589,6 +2699,24 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                 )
 
                 unsubscribe_cov_request.pduDestination = device_address
+                self._active_cov_subscriptions[target] = (
+                    device_address,
+                    subscription.subscriber_process_identifier,
+                    subscription.monitored_object_identifier,
+                )
+                retry_attempted = self.cov_capacity_retry_attempts.pop(target, 0)
+                if retry_attempted:
+                    self.subscription_diagnostics["cov_capacity_retries_recovered"] += 1
+                    LOGGER.info("COV capacity recovered for %s %s", *target)
+                retry_task = self.cov_capacity_retry_tasks.pop(target, None)
+                if (
+                    retry_task is not None
+                    and retry_task is not asyncio.current_task()
+                    and not retry_task.done()
+                ):
+                    retry_task.cancel()
+                if status.get("fallback_reason") == "cov_capacity":
+                    self._cancel_cov_fallback(target)
 
                 LOGGER.debug(f"Created {task_name} subscription task successfully")
                 self.subscription_diagnostics["subscriptions_established"] += 1
@@ -2670,11 +2798,21 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
             LOGGER.error(
                 f"ErrorRejectAbortNack: {self.addr_to_dev(device_address)}, {object_identifier}: {err}"
             )
+            capacity_error = self._is_cov_capacity_error(err)
+            if capacity_error:
+                self.subscription_diagnostics["cov_capacity_rejections"] += 1
             await self._ensure_cov_polling_fallback(
                 device_identifier,
                 object_identifier,
-                "cov_failed",
+                "cov_capacity" if capacity_error else "cov_failed",
             )
+            if capacity_error:
+                self._schedule_cov_capacity_retry(
+                    device_identifier,
+                    object_identifier,
+                    confirmed_notification,
+                    lifetime,
+                )
 
         except AbortPDU as err:
             self.subscription_diagnostics["subscription_failures"] += 1
@@ -2693,9 +2831,8 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                 f"Cancelling subscription task: {device_identifier}, {object_identifier}: {err}"
             )
 
-            # send the request, wait for the response
-            if unsubscribe_cov_request:
-                response = await self.request(unsubscribe_cov_request)
+            if unsubscribe_cov_request and not self._shutting_down:
+                await self.request(unsubscribe_cov_request)
 
         except Exception as err:
             self.subscription_diagnostics["subscription_failures"] += 1
@@ -2710,13 +2847,87 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
 
             # send the request, wait for the response
             if unsubscribe_cov_request:
-                response = await self.request(unsubscribe_cov_request)
+                await self.request(unsubscribe_cov_request)
+        finally:
+            self._active_cov_subscriptions.pop(target, None)
+
+    async def unsubscribe_all(self, timeout: float = 10.0) -> None:
+        """Best-effort cancellation of every confirmed remote COV subscription."""
+        subscriptions = list(self._active_cov_subscriptions.items())
+        if not subscriptions:
+            LOGGER.info("No active COV subscriptions to remove during shutdown")
+            return
+
+        # Stop BACpypes renewal workers before sending lifetime-zero requests,
+        # otherwise a refresh can race with shutdown and recreate an entry.
+        for _, (address, process_identifier, _) in subscriptions:
+            context = self._cov_contexts.get((address, process_identifier))
+            refresh_task = getattr(context, "refresh_subscription_task", None)
+            if isinstance(refresh_task, asyncio.Task) and not refresh_task.done():
+                refresh_task.cancel()
+
+        semaphore = asyncio.Semaphore(4)
+
+        async def unsubscribe_one(target, details) -> None:
+            address, process_identifier, object_identifier = details
+            request = SubscribeCOVRequest(
+                subscriberProcessIdentifier=process_identifier,
+                monitoredObjectIdentifier=object_identifier,
+                destination=address,
+            )
+            request.pduDestination = address
+            try:
+                async with semaphore:
+                    self.subscription_diagnostics["shutdown_unsubscribe_sent"] += 1
+                    await self.request(request)
+            except Exception as err:
+                self.subscription_diagnostics["shutdown_unsubscribe_failed"] += 1
+                LOGGER.warning(
+                    "COV shutdown unsubscribe failed for %s %s: %s",
+                    target[0], target[1], err,
+                )
+            else:
+                self.subscription_diagnostics["shutdown_unsubscribe_confirmed"] += 1
+
+        cleanup_tasks = [
+            asyncio.create_task(unsubscribe_one(target, details))
+            for target, details in subscriptions
+        ]
+        _, pending = await asyncio.wait(cleanup_tasks, timeout=timeout)
+        for task in pending:
+            task.cancel()
+        if pending:
+            self.subscription_diagnostics["shutdown_unsubscribe_timed_out"] += len(
+                pending
+            )
+            LOGGER.warning(
+                "COV shutdown unsubscribe timed out for %s subscription(s)",
+                len(pending),
+            )
+            await asyncio.gather(*pending, return_exceptions=True)
+        LOGGER.info(
+            "COV shutdown cleanup: sent=%s confirmed=%s failed=%s timed_out=%s",
+            self.subscription_diagnostics["shutdown_unsubscribe_sent"],
+            self.subscription_diagnostics["shutdown_unsubscribe_confirmed"],
+            self.subscription_diagnostics["shutdown_unsubscribe_failed"],
+            self.subscription_diagnostics["shutdown_unsubscribe_timed_out"],
+        )
 
     async def end_subscription_tasks(self):
+        self._shutting_down = True
+        if (
+            self.managed_cov_reconcile_task is not None
+            and not self.managed_cov_reconcile_task.done()
+        ):
+            self.managed_cov_reconcile_task.cancel()
+        await self.unsubscribe_all()
         tasks = list(self.subscription_tasks)
         tasks.extend(self.cov_fallback_device_tasks.values())
         tasks.extend(self.cov_watchdog_tasks.values())
         tasks.extend(self.managed_poll_tasks.values())
+        tasks.extend(self.cov_capacity_retry_tasks.values())
+        if self.managed_cov_reconcile_task is not None:
+            tasks.append(self.managed_cov_reconcile_task)
         for task in tasks:
             task.cancel()
         if tasks:
@@ -2732,6 +2943,9 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         self.cov_fallback_object_lists.clear()
         self.cov_watchdog_tasks.clear()
         self.managed_poll_tasks.clear()
+        self.cov_capacity_retry_tasks.clear()
+        self.cov_capacity_retry_attempts.clear()
+        self._active_cov_subscriptions.clear()
         LOGGER.info("Cancelled all subscriptions")
 
     async def do_ConfirmedCOVNotificationRequest(

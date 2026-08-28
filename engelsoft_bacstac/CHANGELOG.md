@@ -2,6 +2,17 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.3.5
+28/08/2026
+
+## **COV subscriptions now know how to leave the party**
+
+## Fixed
+- Reuse stable COV subscriber process identifiers across add-on restarts so devices can renew retained subscriptions instead of allocating duplicate entries.
+- Explicitly cancel confirmed COV subscriptions during graceful shutdown with bounded concurrency, a global timeout, an extended service stop window and outcome diagnostics.
+- Keep capacity-rejected targets in polling fallback and retry COV after the configured subscription lifetime with bounded exponential backoff and jitter.
+- Expose COV capacity, recovery and shutdown cleanup counters through the existing subscription diagnostics endpoint.
+
 # 1.3.4
 27/08/2026
 

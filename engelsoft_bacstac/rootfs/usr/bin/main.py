@@ -453,15 +453,18 @@ async def main():
 
     server = uvicorn.Server(config)
 
-    await server.serve()
-
-    if app:
+    try:
+        await server.serve()
+    finally:
         update_task.cancel()
         write_task.cancel()
         sub_task.cancel()
         unsub_task.cancel()
-        await app.end_subscription_tasks()
-        app.close()
+        if app:
+            try:
+                await asyncio.shield(app.end_subscription_tasks())
+            finally:
+                app.close()
 
 
 if __name__ == "__main__":
