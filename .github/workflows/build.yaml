@@ -13,6 +13,36 @@ permissions:
   contents: read
 
 jobs:
+  quality:
+    name: Release checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install check dependencies
+        run: python -m pip install --requirement engelsoft_bacstac/requirements.txt --requirement requirements-dev.txt
+
+      - name: Check Python syntax and common errors
+        run: |
+          python -m compileall -q engelsoft_bacstac/rootfs/usr/bin scripts tests
+          ruff check --select E9,F63,F7,F82 engelsoft_bacstac/rootfs/usr/bin scripts tests
+
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Validate YAML and release metadata
+        run: python scripts/check_release.py
+
+      - name: Audit runtime dependencies
+        run: pip-audit --requirement engelsoft_bacstac/requirements.txt
+
   prepare:
     name: Prepare build
     runs-on: ubuntu-latest
@@ -46,7 +76,9 @@ jobs:
 
   build:
     name: Build ${{ matrix.arch }}
-    needs: prepare
+    needs:
+      - prepare
+      - quality
     runs-on: ${{ matrix.os }}
     permissions:
       contents: read

@@ -37,7 +37,7 @@ def exception_handler(loop, context):
     """Handle uncaught exceptions"""
     try:
         LOGGER.exception(f'An uncaught error occurred: {context["exception"]}')
-    except:
+    except Exception:
         LOGGER.error("Tried to log error, but something went horribly wrong!!!")
 
 

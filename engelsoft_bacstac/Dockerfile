@@ -9,9 +9,11 @@ ARG BUILD_DESCRIPTION="Engelsoft BACstac for Home Assistant"
 ARG BUILD_NAME="Engelsoft BACstac"
 ARG BUILD_REF
 ARG BUILD_VERSION="dev"
+ENV BACSTAC_VERSION=${BUILD_VERSION}
 
 # Install requirements for add-on
 WORKDIR /usr/src
+COPY requirements.txt ./requirements.txt
 RUN \
   apk add --no-cache \
     nginx \
@@ -19,15 +21,7 @@ RUN \
     py3-pip \
     py3-setuptools \
     py3-wheel \
-  && pip3 install --no-cache-dir --upgrade pip \
-    'bacpypes3<=0.0.98' \
-    'pydantic<=1.10.17' \
-    'fastapi<=0.108.0' \
-    'jinja2<=3.1.4' \
-    'uvicorn<=0.30.1' \
-    'websockets==12.0' \
-    'python-multipart<=0.0.9' \
-    'psutil<=6.0.0'
+  && pip3 install --no-cache-dir -r requirements.txt
 
 WORKDIR /
 

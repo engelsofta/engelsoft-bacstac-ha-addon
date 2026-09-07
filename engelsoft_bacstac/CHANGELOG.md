@@ -2,6 +2,20 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.3.6
+07/09/2026
+
+## **The object list has learned to count**
+
+## Fixed
+- Sort BACnet devices and objects by type and numeric instance, matching the natural order used by the Engelsoft Beacon integration.
+- Report the actual add-on build version through the API instead of a stale hard-coded version.
+- Replace overly broad exception handlers in ingress and EDE parsing with explicit error handling.
+
+## Changed
+- Pin runtime dependencies to reproducible, reviewed patch versions and apply compatible security updates.
+- Add automated syntax, lint, YAML, release-metadata and natural-sorting checks before publishing images.
+
 # 1.3.5
 28/08/2026
 

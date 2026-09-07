@@ -2759,9 +2759,6 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
 
                         continue
 
-                    except Exception:
-                        raise
-
                     object_class = self.vendor_info.get_object_class(
                         subscription.monitored_object_identifier[0]
                     )

@@ -26,7 +26,8 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
+from app_utils import bacnet_identifier_sort_key
 from device_protection import remove_rule, upsert_rule
 from runtime_settings import load as load_runtime_settings, save as save_runtime_settings
 
@@ -34,7 +35,7 @@ from runtime_settings import load as load_runtime_settings, save as save_runtime
 # Global variables
 # ===================================================
 
-bacnet_device_dict: dict
+bacnet_device_dict: dict = {}
 bacnet_application: Application | None = None
 activeSockets: list = []
 activeV2Sockets: list = []
@@ -43,8 +44,8 @@ protocol_sequence = 0
 EDE_files: list = []
 sub_list: list = []
 
-who_is_func: Callable
-i_am_func: Callable
+who_is_func: Callable | None = None
+i_am_func: Callable | None = None
 ingress: str
 
 log_path: str | None = None
@@ -71,7 +72,7 @@ PROTOCOL_CAPABILITIES = [
     "inventory", "managed_targets", "managed_snapshot", "point_events",
     "write_property", "release_priority", "diagnostics", "resync",
 ]
-
+BOOLEAN_ADAPTER = TypeAdapter(bool)
 
 def _configured_api_token() -> str:
     """Read the optional shared secret from Home Assistant app options."""
@@ -201,7 +202,7 @@ def get_ingress_url() -> str:
             url = ingress.read()
             newURL = url.replace("/webapp", "")
             return newURL
-    except:
+    except OSError:
         return ""
 
 
@@ -209,7 +210,7 @@ app = FastAPI(
     lifespan=lifespan,
     title="Engelsoft BACstac API",
     description=description,
-    version="1.3.0",
+    version=os.getenv("BACSTAC_VERSION", "dev"),
     contact={
         "name": "Engelsoft BACstac",
         "url": "https://github.com/engelsofta/engelsoft-bacstac-ha-addon/issues",
@@ -296,7 +297,9 @@ def device_protection_payload() -> dict:
         if rule.get("deviceID") and rule.get("deviceID") != "all"
     }
     devices = []
-    for device_id, payload in sorted(bacnet_device_dict.items()):
+    for device_id, payload in sorted(
+        bacnet_device_dict.items(), key=lambda item: bacnet_identifier_sort_key(item[0])
+    ):
         if not str(device_id).startswith("device:"):
             continue
         override = overrides.get(device_id)
@@ -323,7 +326,9 @@ def device_protection_payload() -> dict:
             }
         )
     discovered_ids = {device["deviceID"] for device in devices}
-    for device_id, override in sorted(overrides.items()):
+    for device_id, override in sorted(
+        overrides.items(), key=lambda item: bacnet_identifier_sort_key(item[0])
+    ):
         if device_id in discovered_ids:
             continue
         devices.append(
@@ -425,6 +430,12 @@ async def get_device_objects(device_id: str, query: str = ""):
         if needle and needle not in searchable:
             continue
         result.append({"object_id": object_id, "properties": jsonable_encoder(properties)})
+    result.sort(
+        key=lambda item: (
+            bacnet_identifier_sort_key(item["object_id"]),
+            str(item["properties"].get("objectName", "")).casefold(),
+        )
+    )
     return {"device_id": device_id, "objects": result}
 
 
@@ -626,6 +637,8 @@ async def set_managed_targets(request: Request):
 @app.get("/apiv1/command/whois", status_code=status.HTTP_200_OK, tags=["apiv1"])
 async def whois_command():
     """Send a Who Is Request over the BACnet network."""
+    if who_is_func is None:
+        return Response(status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
     response = await who_is_func()
 
     if response:
@@ -636,8 +649,9 @@ async def whois_command():
 @app.get("/apiv1/command/iam", tags=["apiv1"])
 async def iam_command():
     """Send an I Am Request over the BACnet network."""
-
-    response = i_am_func()
+    if i_am_func is None:
+        return Response(status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
+    i_am_func()
 
     return status.HTTP_200_OK
 
@@ -696,12 +710,12 @@ async def upload_ede_files(
 
             try:
                 state_text = row[13]
-            except:
+            except IndexError:
                 state_text = None
 
             try:
                 unit = EngineeringUnits(row[14])
-            except:
+            except (IndexError, ValueError):
                 unit = None
 
             obj_dict = {}
@@ -1218,7 +1232,7 @@ async def write_property(
         property = PropertyIdentifier(property)
 
         if is_bool(value):
-            value = parse_obj_as(bool, value)
+            value = BOOLEAN_ADAPTER.validate_python(value)
 
     except Exception as err:
         LOGGER.error(f"Error while trying to make a write request: {err}")
