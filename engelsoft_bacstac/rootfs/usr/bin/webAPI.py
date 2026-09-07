@@ -377,9 +377,9 @@ async def webapp(request: Request):
     dict_to_send = jsonable_encoder(dict_to_send)
 
     return templates.TemplateResponse(
-        "index.html",
-        {
-            "request": request,
+        request=request,
+        name="index.html",
+        context={
             "bacnet_devices": dict_to_send,
             "sidebar": sidebar_status(),
             "device_protection": device_protection_payload(),
@@ -478,9 +478,9 @@ async def subscriptions(request: Request):
     global sub_list
 
     return templates.TemplateResponse(
-        "subscriptions.html",
-        {
-            "request": request,
+        request=request,
+        name="subscriptions.html",
+        context={
             "sidebar": sidebar_status(),
             "targets": (
                 bacnet_application.target_status_snapshot()
@@ -495,9 +495,9 @@ async def subscriptions(request: Request):
 async def subscription_targets(request: Request):
     """Return the live target rows without reloading the complete page."""
     return templates.TemplateResponse(
-        "target_rows.html",
-        {
-            "request": request,
+        request=request,
+        name="target_rows.html",
+        context={
             "targets": (
                 bacnet_application.target_status_snapshot()
                 if bacnet_application is not None
@@ -511,8 +511,9 @@ async def subscription_targets(request: Request):
 async def ede(request: Request):
     """Page to see EDE files uploaded."""
     return templates.TemplateResponse(
-        "ede.html",
-        {"request": request, "files": EDE_files, "sidebar": sidebar_status()},
+        request=request,
+        name="ede.html",
+        context={"files": EDE_files, "sidebar": sidebar_status()},
     )
 
 

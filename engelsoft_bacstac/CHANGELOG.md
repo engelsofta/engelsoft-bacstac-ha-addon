@@ -2,6 +2,15 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.3.7
+07/09/2026
+
+## **The GUI has returned from its unscheduled coffee break**
+
+## Fixed
+- Restore all WebUI pages after the Starlette template API change introduced in 1.3.6.
+- Add direct render tests for the main, subscriptions, target-status and EDE pages.
+
 # 1.3.6
 07/09/2026
 
