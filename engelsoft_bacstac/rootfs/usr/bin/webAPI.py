@@ -24,7 +24,6 @@ from fastapi import (FastAPI, Path, Query, Request, Response, UploadFile,
                      WebSocket, WebSocketDisconnect, status)
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse, HTMLResponse
-from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import TypeAdapter
 from app_utils import bacnet_identifier_sort_key
@@ -221,12 +220,21 @@ app = FastAPI(
 
 
 path_str = os.path.dirname(os.path.realpath(__file__))
+static_path = os.path.realpath(os.path.join(path_str, "static"))
 
-app.mount(
-    "/static",
-    StaticFiles(directory=f"{path_str}/static"),
-    name="static",
-)
+
+@app.get("/static/{path:path}", include_in_schema=False, name="static")
+async def static_asset(path: str):
+    """Serve WebUI assets reliably when Home Assistant strips the ingress prefix."""
+    asset_path = os.path.realpath(os.path.join(static_path, path.lstrip("/")))
+    try:
+        if os.path.commonpath((static_path, asset_path)) != static_path:
+            return Response(status_code=status.HTTP_404_NOT_FOUND)
+    except ValueError:
+        return Response(status_code=status.HTTP_404_NOT_FOUND)
+    if not os.path.isfile(asset_path):
+        return Response(status_code=status.HTTP_404_NOT_FOUND)
+    return FileResponse(asset_path)
 
 templates = Jinja2Templates(directory=f"{path_str}/templates")
 

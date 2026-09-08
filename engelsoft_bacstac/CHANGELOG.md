@@ -2,6 +2,17 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.3.8
+08/09/2026
+
+## **The CSS has stopped hiding behind the ingress proxy**
+
+## Fixed
+- Serve CSS and JavaScript correctly when Home Assistant strips the ingress prefix before forwarding requests to BACstac.
+- Refresh every WebUI asset cache key so browsers immediately load the corrected resources.
+- Add end-to-end ASGI checks for HTML, CSS and JavaScript requests behind a simulated ingress root path.
+- Reject path traversal attempts in the explicit static-asset route.
+
 # 1.3.7
 07/09/2026
 

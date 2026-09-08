@@ -12,6 +12,7 @@ os.environ["BACSTAC_VERSION"] = "test-version"
 
 import webAPI  # noqa: E402
 from starlette.requests import Request  # noqa: E402
+from starlette.testclient import TestClient  # noqa: E402
 
 
 class WebApiTests(unittest.TestCase):
@@ -57,6 +58,23 @@ class WebApiTests(unittest.TestCase):
                 response = asyncio.run(endpoint(self.request(path)))
                 self.assertEqual(response.status_code, 200)
                 self.assertIn("text/html", response.media_type)
+
+    def test_ingress_requests_can_load_css_and_javascript(self) -> None:
+        client = TestClient(webAPI.app, root_path="/api/hassio_ingress/test-token")
+        html = client.get("/webapp")
+        css = client.get("/static/css/styles.css")
+        javascript = client.get("/static/js/theme.js")
+
+        self.assertEqual(html.status_code, 200)
+        self.assertEqual(css.status_code, 200)
+        self.assertEqual(css.headers["content-type"], "text/css; charset=utf-8")
+        self.assertEqual(javascript.status_code, 200)
+        self.assertIn("javascript", javascript.headers["content-type"])
+        self.assertIn("/api/hassio_ingress/test-token/static/css/styles.css?v=1.3.8", html.text)
+
+    def test_static_route_rejects_path_traversal(self) -> None:
+        response = asyncio.run(webAPI.static_asset("../../config.yaml"))
+        self.assertEqual(response.status_code, 404)
 
 
 if __name__ == "__main__":
