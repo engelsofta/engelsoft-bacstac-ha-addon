@@ -1677,6 +1677,9 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
 
         await super().do_IAmRequest(apdu)
 
+        if self.identifier_to_string(apdu.iAmDeviceIdentifier) in self._active_discovery_devices:
+            return
+
         if not in_cache:
             await self.i_am_queue.put(apdu)
             return
@@ -1692,17 +1695,26 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
             await self.handle_cov_check(apdu.iAmDeviceIdentifier)
 
     async def handle_object_list_check(self, apdu) -> None:
+        device_key = self.identifier_to_string(apdu.iAmDeviceIdentifier)
+        if device_key in self._active_discovery_devices:
+            return
+        self._active_discovery_devices.add(device_key)
+        try:
+            await self._check_object_list(apdu)
+        finally:
+            self._active_discovery_devices.discard(device_key)
+
+    async def _check_object_list(self, apdu) -> None:
 
         device_id = apdu.iAmDeviceIdentifier[1]
 
-        old_object_list = self.bacnet_device_dict[
+        old_object_list = list(self.bacnet_device_dict[
             f"device:{apdu.iAmDeviceIdentifier[1]}"
-        ][f"device:{apdu.iAmDeviceIdentifier[1]}"].get("objectList")
+        ][f"device:{apdu.iAmDeviceIdentifier[1]}"].get("objectList") or [])
 
         if not await self.read_multiple_device_props(apdu=apdu):
             LOGGER.warning(f"Failed to get: {device_id}, {device_id}")
-            if self.bacnet_device_dict.get(f"device:{device_id}"):
-                self.bacnet_device_dict.pop(f"device:{device_id}")
+            return
 
         new_object_list = self.bacnet_device_dict[
             f"device:{apdu.iAmDeviceIdentifier[1]}"
@@ -1711,12 +1723,19 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         if apdu.iAmDeviceIdentifier in new_object_list:
             new_object_list.remove(apdu.iAmDeviceIdentifier)
 
-        if list(old_object_list) != list(new_object_list):
+        objects_to_read = [
+            obj for obj in new_object_list
+            if obj not in old_object_list
+            or self.identifier_to_string(obj) not in self.bacnet_device_dict[f"device:{device_id}"]
+        ]
+        if objects_to_read:
             LOGGER.debug(
                 f"Object lists aren't equal!... {old_object_list} -> {new_object_list}"
             )
 
-            await self.read_multiple_objects(apdu.iAmDeviceIdentifier)
+            await self.read_multiple_objects(
+                apdu.iAmDeviceIdentifier, objects=objects_to_read
+            )
 
     def identifier_to_string(self, object_identifier) -> str:
         return f"{object_identifier[0].attr}:{object_identifier[1]}"
@@ -1844,7 +1863,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                 if not await self.read_multiple_device_props(apdu=apdu):
                     LOGGER.warning(f"Failed to get: {device_id}, {device_id}")
                     if self.bacnet_device_dict.get(f"device:{device_id}"):
-                        self.bacnet_device_dict.pop(f"device:{device_id}")
+                        LOGGER.warning("Keeping existing inventory for device:%s", device_id)
                     continue
 
                 if not self.bacnet_device_dict.get(f"device:{device_id}"):
@@ -2046,7 +2065,8 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
 
             LOGGER.debug(f"Reading device properties of {device_identifier}")
 
-            response = await self.read_property_multiple(
+            response = await self._run_discovery_request(
+                device_identifier, self.read_property_multiple,
                 address=apdu.pduSource, parameter_list=parameter_list
             )
 
@@ -2117,7 +2137,8 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                 continue
 
             try:
-                response = await self.read_property(
+                response = await self._run_discovery_request(
+                    device_identifier, self.read_property,
                     address=address, objid=device_identifier, prop=property_id
                 )
             except ErrorRejectAbortNack as err:
@@ -2236,13 +2257,16 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         else:
             return True
 
-    async def read_multiple_objects(self, device_identifier):
+    async def read_multiple_objects(self, device_identifier, objects=None):
         """Read all objects from a device."""
         LOGGER.info(f"Reading objects from objectList of {device_identifier}...")
         device_identifier = ObjectIdentifier(device_identifier)
         object_list = self.bacnet_device_dict[f"device:{device_identifier[1]}"][
             f"device:{device_identifier[1]}"
         ]["objectList"]
+
+        if objects is not None:
+            object_list = objects
 
         async def read_one_object(obj_id):
             if not isinstance(obj_id, ObjectIdentifier):
@@ -2276,7 +2300,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                     return "fallback"
                 elif "no-response" in str(err):
                     return "failed"
-                return "failed"
+                return "object_failed"
 
             except AssertionError as err:
                 LOGGER.error(
@@ -2307,14 +2331,18 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
 
         # Changed by Engelsoft: stop immediately when RPM is unsupported or a
         # device stops answering instead of scheduling every object in advance.
+        all_successful = True
         for obj_id in object_list:
             result = await read_one_object(obj_id)
+            if result == "object_failed":
+                all_successful = False
+                continue
             if result == "fallback":
                 LOGGER.info(
                     "ReadPropertyMultiple is unavailable; using paced single-property discovery for %s",
                     device_identifier,
                 )
-                return await self.read_objects(device_identifier)
+                return await self.read_objects(device_identifier, objects=object_list)
             if result == "failed":
                 LOGGER.warning(
                     "BACnet discovery stopped after a failed object read for %s",
@@ -2322,13 +2350,16 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
                 )
                 return False
 
-        return True
+        return all_successful
 
-    async def read_objects(self, device_identifier):
+    async def read_objects(self, device_identifier, objects=None):
         try:
             object_list = self.bacnet_device_dict[f"device:{device_identifier[1]}"][
                 f"device:{device_identifier[1]}"
             ].get("objectList", [])
+
+            if objects is not None:
+                object_list = objects
 
             unsupported_properties = 0
 

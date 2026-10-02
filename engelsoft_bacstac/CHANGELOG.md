@@ -1,6 +1,22 @@
-﻿﻿<!-- https://developers.home-assistant.io/docs/add-ons/presentation#keeping-a-changelog -->
+﻿<!-- https://developers.home-assistant.io/docs/add-ons/presentation#keeping-a-changelog -->
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
+
+# 1.3.9
+02/10/2026
+
+## **One grumpy object no longer ruins the BACnet party**
+
+## Fixed
+- Continue discovery after object-specific BACnet errors such as `other`, allowing later objects to be discovered. Stop on loss of device communication to avoid repeatedly querying an offline station.
+- Read only new or missing objects after an I-Am object-list check instead of reading the entire station again.
+- Prevent overlapping discovery passes for the same device during repeated I-Am messages.
+- Keep the existing inventory when device-property reads fail; incomplete fresh inventories still do not replace the persistent cache.
+- Apply paced requests and bounded timeouts to device-property discovery as well as object discovery.
+
+## Validation
+- Add regression checks for object errors, offline stations, incremental reads and repeated I-Am messages.
+- Live validation on Home Assistant and physical BACnet devices remains required; this release does not claim to resolve every cause of UI freezes.
 
 # 1.3.8
 08/09/2026
