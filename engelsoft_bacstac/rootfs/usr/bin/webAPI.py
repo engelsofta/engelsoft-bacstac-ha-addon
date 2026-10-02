@@ -27,7 +27,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import TypeAdapter
 from app_utils import bacnet_identifier_sort_key
-from device_protection import remove_rule, upsert_rule
+from device_protection import DEFAULT_RULE, remove_rule, upsert_rule
 from runtime_settings import load as load_runtime_settings, save as save_runtime_settings
 
 # ===================================================
@@ -453,6 +453,7 @@ async def set_device_protection(device_id: str, request: Request):
     application = bacnet_application
     if application is None:
         return Response(status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
+    previous_rules = list(application.addon_device_config)
     try:
         values = await request.json()
         if not isinstance(values, dict):
@@ -462,7 +463,9 @@ async def set_device_protection(device_id: str, request: Request):
         )
     except (TypeError, ValueError, OSError) as err:
         return Response(content=str(err), status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
-    await application.reapply_managed_targets()
+    response = await _apply_changed_protection(application, previous_rules)
+    if response is not None:
+        return response
     return device_protection_payload()
 
 
@@ -472,11 +475,40 @@ async def delete_device_protection(device_id: str):
     application = bacnet_application
     if application is None:
         return Response(status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
+    previous_rules = list(application.addon_device_config)
     application.addon_device_config = remove_rule(
         list(application.addon_device_config), device_id
     )
-    await application.reapply_managed_targets()
+    response = await _apply_changed_protection(application, previous_rules)
+    if response is not None:
+        return response
     return device_protection_payload()
+
+
+async def _apply_changed_protection(application, previous_rules):
+    """I-Am switches do not change the running COV transport plan."""
+    current_rules = application.addon_device_config
+    device_ids = {"all"} | {
+        rule["deviceID"] for rule in previous_rules + current_rules
+    }
+
+    def transport_settings(rules, device_id):
+        default = next((rule for rule in rules if rule["deviceID"] == "all"), DEFAULT_RULE)
+        effective = next((rule for rule in rules if rule["deviceID"] == device_id), default)
+        return tuple(effective.get(key, DEFAULT_RULE[key]) for key in ("CoV_lifetime", "CoV_limit"))
+
+    if all(transport_settings(previous_rules, device_id) == transport_settings(current_rules, device_id)
+           for device_id in device_ids):
+        return None
+    try:
+        await application.reapply_managed_targets()
+    except TimeoutError:
+        LOGGER.warning("Protection settings saved, but COV cleanup did not finish in time")
+        return Response(
+            content="Einstellungen gespeichert, aber COV-Anmeldungen konnten nicht rechtzeitig beendet werden. Add-on neu starten.",
+            status_code=503,
+        )
+    return None
 
 
 @app.get("/subscriptions", response_class=HTMLResponse, tags=["Webpages"])

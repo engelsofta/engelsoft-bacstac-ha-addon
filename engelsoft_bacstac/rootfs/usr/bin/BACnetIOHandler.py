@@ -1468,6 +1468,12 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         ]
         # A lifetime change must renew even when target names stay identical.
         # Wait for the old context managers to unsubscribe before rebuilding.
+        reconcile_task = self.managed_cov_reconcile_task
+        if reconcile_task is not None and not reconcile_task.done():
+            reconcile_task.cancel()
+            _, pending = await asyncio.wait({reconcile_task}, timeout=5)
+            if pending:
+                raise TimeoutError("COV reconciliation did not stop")
         current_names = set(self.managed_cov_task_names)
         current_tasks = [
             task
@@ -1477,7 +1483,10 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         for task in current_tasks:
             task.cancel()
         if current_tasks:
-            await asyncio.gather(*current_tasks, return_exceptions=True)
+            _, pending = await asyncio.wait(current_tasks, timeout=5)
+            if pending:
+                # Do not create replacements while old contexts are still alive.
+                raise TimeoutError("COV subscription cleanup did not finish")
         # Force plan comparison to notice changed safety limits and rules.
         self.managed_requested_modes = {}
         return await self.replace_managed_targets(targets)

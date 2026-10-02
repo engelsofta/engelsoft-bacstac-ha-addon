@@ -70,11 +70,39 @@ class WebApiTests(unittest.TestCase):
         self.assertEqual(css.headers["content-type"], "text/css; charset=utf-8")
         self.assertEqual(javascript.status_code, 200)
         self.assertIn("javascript", javascript.headers["content-type"])
-        self.assertIn("/api/hassio_ingress/test-token/static/css/styles.css?v=1.3.8", html.text)
+        self.assertIn("/api/hassio_ingress/test-token/static/css/styles.css?v=1.3.10", html.text)
 
     def test_static_route_rejects_path_traversal(self) -> None:
         response = asyncio.run(webAPI.static_asset("../../config.yaml"))
         self.assertEqual(response.status_code, 404)
+
+
+class ProtectionSaveTests(unittest.IsolatedAsyncioTestCase):
+    async def test_iam_switches_preserve_cov_subscriptions(self):
+        from types import SimpleNamespace
+        from unittest.mock import AsyncMock
+        old = [{**webAPI.DEFAULT_RULE}]
+        app = SimpleNamespace(addon_device_config=[{**webAPI.DEFAULT_RULE, "reread_on_iam": True}],
+                              reapply_managed_targets=AsyncMock())
+        self.assertIsNone(await webAPI._apply_changed_protection(app, old))
+        app.reapply_managed_targets.assert_not_awaited()
+
+    async def test_changed_lifetime_reapplies_transport(self):
+        from types import SimpleNamespace
+        from unittest.mock import AsyncMock
+        app = SimpleNamespace(addon_device_config=[{**webAPI.DEFAULT_RULE, "CoV_lifetime": 1200}],
+                              reapply_managed_targets=AsyncMock())
+        self.assertIsNone(await webAPI._apply_changed_protection(app, [webAPI.DEFAULT_RULE]))
+        app.reapply_managed_targets.assert_awaited_once()
+
+    async def test_cleanup_timeout_returns_explicit_saved_settings_error(self):
+        from types import SimpleNamespace
+        from unittest.mock import AsyncMock
+        app = SimpleNamespace(addon_device_config=[{**webAPI.DEFAULT_RULE, "CoV_limit": 25}],
+                              reapply_managed_targets=AsyncMock(side_effect=TimeoutError))
+        response = await webAPI._apply_changed_protection(app, [webAPI.DEFAULT_RULE])
+        self.assertEqual(response.status_code, 503)
+        self.assertIn("Einstellungen gespeichert", response.body.decode())
 
 
 if __name__ == "__main__":

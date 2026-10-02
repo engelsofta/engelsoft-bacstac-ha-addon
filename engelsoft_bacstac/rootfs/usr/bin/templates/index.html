@@ -1,10 +1,10 @@
 <!-- Modified by engelsofta in 2026; derived from the Bepacom BACnet/IP add-on. -->
 <!DOCTYPE html><html lang="de"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<script src="{{ url_for('static', path='js/theme.js') }}?v=1.3.8"></script>
-<script src="{{ url_for('static', path='js/locale.js') }}?v=1.3.8"></script>
-<script defer src="{{ url_for('static', path='js/mode-status.js') }}?v=1.3.8"></script>
-<link href="{{ url_for('static', path='css/styles.css') }}?v=1.3.8" rel="stylesheet">
+<script src="{{ url_for('static', path='js/theme.js') }}?v=1.3.10"></script>
+<script src="{{ url_for('static', path='js/locale.js') }}?v=1.3.10"></script>
+<script defer src="{{ url_for('static', path='js/mode-status.js') }}?v=1.3.10"></script>
+<link href="{{ url_for('static', path='css/styles.css') }}?v=1.3.10" rel="stylesheet">
 <title>Engelsoft BACstac</title></head><body><div class="parent">
 <div class="div1"><div class="brand-mark">B</div><div class="brand-copy"><span class="brand-kicker">ENGELSOFT</span><h1>Engelsoft BACstac</h1><span class="brand-version">BACnet/IP-Schnittstelle</span></div></div>
 <div class="div2">
@@ -53,8 +53,9 @@ document.querySelectorAll(".object-search input").forEach(input=>{let timer;inpu
 byId("device-search").addEventListener("input",e=>{const q=e.target.value.toLocaleLowerCase("de");document.querySelectorAll(".device-tree").forEach(x=>x.hidden=!x.dataset.search.toLocaleLowerCase("de").includes(q))});
 byId("protection-device-search").addEventListener("change",e=>selectDevice(e.target.value));
 byId("cov-limit").addEventListener("input",()=>{const d=deviceById(selectedDevice),limit=+byId("cov-limit").value,warn=d&&d.cov_requested>limit;byId("cov-warning").hidden=!warn;byId("cov-warning").textContent=warn?`${d.cov_requested-limit} COV-Ziele werden wegen des Limits gepollt.`:""});
-byId("save-protection").addEventListener("click",async()=>{const id=selectedDevice,p={CoV_lifetime:+byId("cov-lifetime").value,CoV_limit:+byId("cov-limit").value,resub_on_iam:byId("resub-on-iam").checked,reread_on_iam:byId("reread-on-iam").checked};const r=await fetch(`./apiv1/device-protection/${encodeURIComponent(id)}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});if(r.ok){protectionData=await r.json();byId("protection-message").textContent="Gespeichert und live übernommen.";fillDeviceSearch();renderProtection()}});
-byId("reset-protection").addEventListener("click",async()=>{const r=await fetch(`./apiv1/device-protection/${encodeURIComponent(selectedDevice)}`,{method:"DELETE"});if(r.ok){protectionData=await r.json();renderProtection()}});
+async function saveProtection(remove=false){const message=byId("protection-message"),controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);byId("save-protection").disabled=true;byId("reset-protection").disabled=true;message.textContent="Wird übernommen …";try{const p={CoV_lifetime:+byId("cov-lifetime").value,CoV_limit:+byId("cov-limit").value,resub_on_iam:byId("resub-on-iam").checked,reread_on_iam:byId("reread-on-iam").checked};const r=await fetch(`./apiv1/device-protection/${encodeURIComponent(selectedDevice)}`,{method:remove?"DELETE":"PUT",headers:{"Content-Type":"application/json"},body:remove?undefined:JSON.stringify(p),signal:controller.signal});if(!r.ok)throw new Error(await r.text()||"Speichern fehlgeschlagen.");protectionData=await r.json();fillDeviceSearch();renderProtection();message.textContent="Gespeichert und live übernommen."}catch(err){message.textContent=err.name==="AbortError"?"Keine rechtzeitige Antwort. Bitte Seite neu laden und gespeicherte Einstellungen prüfen.":err.message}finally{clearTimeout(timer);byId("save-protection").disabled=false;byId("reset-protection").disabled=false}}
+byId("save-protection").addEventListener("click",()=>saveProtection());
+byId("reset-protection").addEventListener("click",()=>saveProtection(true));
 document.querySelectorAll(".panel-tabs button").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll(".panel-tabs button").forEach(x=>x.classList.toggle("active",x===b));byId("panel-protection").hidden=b.dataset.panel!=="protection";byId("panel-runtime").hidden=b.dataset.panel!=="runtime"}));
 async function loadRuntime(){const r=await fetch("./apiv1/runtime-settings"),s=await r.json();byId("runtime-poll").value=s.managed_poll_rate;byId("runtime-delay").value=s.managed_cov_subscription_delay_ms;byId("runtime-fallback").value=s.managed_cov_fallback_timeout;byId("runtime-priority").value=s.defaultPriority}
 byId("save-runtime").addEventListener("click",async()=>{const p={managed_poll_rate:+byId("runtime-poll").value,managed_cov_subscription_delay_ms:+byId("runtime-delay").value,managed_cov_fallback_timeout:+byId("runtime-fallback").value,defaultPriority:+byId("runtime-priority").value};const r=await fetch("./apiv1/runtime-settings",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});byId("runtime-message").textContent=r.ok?"Gespeichert und live übernommen.":"Speichern fehlgeschlagen."});

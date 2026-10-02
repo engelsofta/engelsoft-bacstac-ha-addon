@@ -2,6 +2,17 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.3.10
+02/10/2026
+
+## **Apply has stopped taking the entire COV orchestra on a coffee break**
+
+## Fixed
+- Save I-Am switches and unchanged rules without restarting COV subscriptions.
+- Rebuild transport only for changed effective COV limits or lifetimes.
+- Bound cleanup waits and stop reconciliation before replacing subscriptions; avoid overlapping contexts on timeout.
+- Show progress, errors and timeouts when saving or resetting protection rules.
+
 # 1.3.9
 02/10/2026
 
