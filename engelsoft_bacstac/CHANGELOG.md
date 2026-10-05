@@ -1,6 +1,24 @@
-﻿<!-- https://developers.home-assistant.io/docs/add-ons/presentation#keeping-a-changelog -->
+<!-- https://developers.home-assistant.io/docs/add-ons/presentation#keeping-a-changelog -->
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
+
+# 1.3.11
+05/10/2026
+
+## **The Explorer is one click away. Your IP address can stay in witness protection.**
+
+## Added
+- Open the companion BACnet Explorer directly from the navigation bar on all WebUI pages.
+- Use `/bepacom_explorer` on the current Home Assistant address, without a hard-coded IP, port or protocol, and leave the ingress frame in the same window.
+
+## Changed
+- Adapt desktop and narrow-screen navigation to three links.
+- Add an English translation for the integration link tooltip.
+- Refresh all WebUI asset cache keys for the new navigation.
+- Remove the obsolete companion-checkout ignore rule after moving the integration out of this repository.
+
+## Validation
+- Local WebUI rendering and simulated ingress checks; live Home Assistant navigation remains unverified.
 
 # 1.3.10
 02/10/2026

@@ -1,15 +1,16 @@
 <!-- Modified by engelsofta in 2026; derived from the Bepacom BACnet/IP add-on. -->
 <!DOCTYPE html><html lang="de"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<script src="{{ url_for('static', path='js/theme.js') }}?v=1.3.10"></script>
-<script src="{{ url_for('static', path='js/locale.js') }}?v=1.3.10"></script>
-<script defer src="{{ url_for('static', path='js/mode-status.js') }}?v=1.3.10"></script>
-<link href="{{ url_for('static', path='css/styles.css') }}?v=1.3.10" rel="stylesheet">
+<script src="{{ url_for('static', path='js/theme.js') }}?v=1.3.11"></script>
+<script src="{{ url_for('static', path='js/locale.js') }}?v=1.3.11"></script>
+<script defer src="{{ url_for('static', path='js/mode-status.js') }}?v=1.3.11"></script>
+<link href="{{ url_for('static', path='css/styles.css') }}?v=1.3.11" rel="stylesheet">
 <title>Engelsoft BACstac</title></head><body><div class="parent">
 <div class="div1"><div class="brand-mark">B</div><div class="brand-copy"><span class="brand-kicker">ENGELSOFT</span><h1>Engelsoft BACstac</h1><span class="brand-version">BACnet/IP-Schnittstelle</span></div></div>
 <div class="div2">
   <a class="active" href="./webapp" title="Geräte, Objekte und aktuelle Werte"><span>▦</span> Geräte</a>
   <a href="./subscriptions" title="COV- und Polling-Status"><span>◇</span> Aktualisierungen</a>
+  <a href="/bepacom_explorer" target="_top" title="BACnet-Integration in Home Assistant öffnen"><span aria-hidden="true">↗</span> BACnet Explorer</a>
   <div class="mode-summary"><div><small>AKTUALISIERUNGSSTEUERUNG</small><strong data-mode-label>{{ sidebar.label }}</strong></div><div class="mode-metrics"><span><b>{{ sidebar.targets }}</b> Ziele</span><span><b>{{ sidebar.cov }}</b> COV</span><span><b>{{ sidebar.polling }}</b> Polling</span></div></div>
 </div>
 <div class="div4">

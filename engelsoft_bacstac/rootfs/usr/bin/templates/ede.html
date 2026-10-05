@@ -3,10 +3,10 @@
 <html lang="de">
 <head>
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<script src="{{ url_for('static', path='js/theme.js') }}?v=1.3.8"></script>
-	<script src="{{ url_for('static', path='js/locale.js') }}?v=1.3.8"></script>
-	<script defer src="{{ url_for('static', path='js/mode-status.js') }}?v=1.3.8"></script>
-	<link href="{{ url_for('static', path='css/styles.css') }}?v=1.3.8" rel="stylesheet">
+	<script src="{{ url_for('static', path='js/theme.js') }}?v=1.3.11"></script>
+	<script src="{{ url_for('static', path='js/locale.js') }}?v=1.3.11"></script>
+	<script defer src="{{ url_for('static', path='js/mode-status.js') }}?v=1.3.11"></script>
+	<link href="{{ url_for('static', path='css/styles.css') }}?v=1.3.11" rel="stylesheet">
 	<title>Engelsoft BACstac – EDE</title>
 </head>
 <body>
@@ -22,6 +22,7 @@
 		<div class="div2">
 			<a href="./webapp" title="Geräte, Objekte und aktuelle Werte"><span>▦</span> Geräte</a>
 			<a href="./subscriptions" title="COV- und Polling-Status"><span>◇</span> Aktualisierungen</a>
+			<a href="/bepacom_explorer" target="_top" title="BACnet-Integration in Home Assistant öffnen"><span aria-hidden="true">↗</span> BACnet Explorer</a>
 			<div class="mode-summary mode-{{ sidebar.mode }}">
 				<div><small>AKTUALISIERUNGSSTEUERUNG</small><strong data-mode-label>{{ sidebar.label }}</strong></div>
 				<div class="mode-metrics">

@@ -3,6 +3,7 @@
   const translations = [
     ["BACnet/IP-Schnittstelle", "BACnet/IP interface"],
     ["Geräte, Objekte und aktuelle Werte", "Devices, objects and current values"],
+    ["BACnet-Integration in Home Assistant öffnen", "Open BACnet integration in Home Assistant"],
     ["Geräte", "Devices"], ["Gerät", "Device"], ["Objekte", "Objects"], ["Objekt", "Object"],
     ["Aktualisierungen", "Updates"], ["AKTUALISIERUNGSSTEUERUNG", "UPDATE CONTROL"],
     ["Integrationsgesteuert", "Integration controlled"], ["Wird gestartet", "Starting"],
