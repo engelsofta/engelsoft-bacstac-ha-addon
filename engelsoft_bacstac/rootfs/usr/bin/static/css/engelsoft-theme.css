@@ -35,18 +35,18 @@
   --page-background:linear-gradient(115deg,rgba(224,232,239,.38),rgba(237,231,216,.32)),url('../images/engelsoft-background-light.png') center / cover fixed,#dfe5e9;
 }
 [hidden] { display:none!important; }
-body { background:var(--page-background); font-family:"Segoe UI Variable",Inter,"Segoe UI",sans-serif; }
+body { background:var(--page-background); font-family:"Segoe UI Variable Text","Segoe UI",-apple-system,BlinkMacSystemFont,sans-serif; }
 button,input,select { font-family:inherit; }
 .parent {
   grid-template-columns:48px minmax(0,1fr) minmax(300px,350px);
-  grid-template-rows:60px auto minmax(0,1fr); gap:18px;
+  grid-template-rows:80px auto minmax(0,1fr); gap:18px;
   width:100%; max-width:1884px; height:100dvh; padding:20px 22px; margin:auto;
 }
 .div1 { grid-column:2 / -1; grid-row:1; min-width:0; min-height:60px; padding:0; margin:0; gap:12px; border:0; background:transparent; }
 .brand-mark { width:42px; height:42px; flex-basis:42px; border:1px solid var(--line); border-radius:13px; color:var(--gold); background:var(--input-surface); box-shadow:inset 0 1px rgba(255,255,255,.13); }
 .brand-mark svg { width:27px; height:27px; }
-.brand-kicker { margin:0 0 5px; color:var(--muted); font-size:9px; font-weight:500; letter-spacing:.14em; }
-.div1 h1 { display:flex; align-items:center; gap:16px; font-size:25px; font-weight:450; line-height:1.12; letter-spacing:-.035em; }
+.brand-kicker { margin:0 0 5px; color:var(--muted); font-size:9px; font-weight:600; letter-spacing:.15em; }
+.div1 h1 { display:flex; align-items:center; gap:16px; font-family:"Segoe UI Variable Display","Segoe UI Variable Text","Segoe UI",sans-serif; font-size:clamp(28px,2.5vw,38px); font-weight:540; line-height:1.12; letter-spacing:-.04em; }
 .brand-section { display:flex; align-items:center; gap:16px; color:var(--gold); font-size:19px; font-weight:400; letter-spacing:normal; }
 .brand-section::before { content:""; width:1px; height:26px; background:linear-gradient(transparent,var(--gold) 18%,var(--gold) 82%,transparent); opacity:.75; }
 .brand-version { display:block; margin-top:5px; opacity:.75; }
@@ -54,6 +54,20 @@ button,input,select { font-family:inherit; }
 .div2 a { flex:0 0 36px; width:36px; height:36px; min-height:36px; padding:0; border:0; border-radius:50%; }
 .div2 svg { width:19px; height:19px; }
 .div2 a.active { color:var(--gold); background:var(--active-gradient); box-shadow:inset 0 0 0 1px var(--line); }
+.div2 a[href="/bepacom_explorer"] {
+  color:#a8c5a1; background:rgba(139,181,126,.09);
+  box-shadow:inset 0 0 0 1px rgba(139,181,126,.20);
+}
+.div2 a[href="/bepacom_explorer"]:hover {
+  color:#c2dbba; background:rgba(139,181,126,.16);
+}
+:root[data-theme="light"] .div2 a[href="/bepacom_explorer"] {
+  color:#52764a; background:rgba(91,135,77,.08);
+  box-shadow:inset 0 0 0 1px rgba(91,135,77,.22);
+}
+:root[data-theme="light"] .div2 a[href="/bepacom_explorer"]:hover {
+  color:#3e6236; background:rgba(91,135,77,.15);
+}
 a:focus-visible,button:focus-visible,summary:focus-visible { outline:2px solid var(--gold); outline-offset:3px; }
 .mode-summary { grid-column:2 / -1; grid-row:2; min-width:0; min-height:92px; gap:20px; padding:16px 20px; border:1px solid var(--line); border-radius:13px; background:var(--surface-2); }
 .mode-summary small { font-weight:500; letter-spacing:.12em; }
@@ -79,7 +93,31 @@ body[data-page="ede"] .div5::before { content:"EDE-Dateien verwalten"; }
 .button,input[type="button"] { font-size:12px; font-weight:500; border-radius:10px; }
 .button:hover,input[type="button"]:hover,.target-status-row:hover { transform:none; filter:none; background:var(--nav-hover); }
 .target-toolbar,.target-status-header,th { background:var(--sticky-surface); }
-.target-toolbar { top:-16px; padding:10px 0; }
+.target-toolbar {
+  position:relative; top:auto; grid-template-columns:minmax(180px,1fr) auto auto;
+  gap:12px; margin:0 0 12px; padding:10px;
+  border:1px solid var(--line); border-radius:13px;
+  background:var(--surface-2);
+}
+.target-search { min-width:0; min-height:38px; border-radius:10px; background:var(--input-surface); }
+.target-search input { min-height:36px; padding:0; font-size:12px; box-shadow:none; }
+.target-search input:focus { box-shadow:none; }
+.target-filter-buttons {
+  gap:3px; padding:3px; border:1px solid var(--line); border-radius:11px;
+  background:var(--surface-2);
+}
+.target-filter-buttons button { min-height:30px; padding:0 10px; border:1px solid transparent; border-radius:8px; background:transparent; font:inherit; font-size:12px; }
+.target-filter-buttons button.active { color:var(--gold); border-color:var(--gold-border); background:var(--gold-soft); }
+.target-visible-count { padding:0 4px; font-size:11px; }
+.target-visible-count b { font-weight:600; }
+.target-status-header {
+  min-height:44px; margin-bottom:8px; padding:8px 12px;
+  border:0; border-bottom:1px solid var(--line); border-radius:0;
+  background:var(--sticky-surface); box-shadow:none;
+  font-size:12px; font-weight:500; letter-spacing:normal; text-transform:none;
+}
+.target-status-header button { min-height:28px; gap:7px; }
+.target-status-header button i::after { opacity:.55; font-size:12px; }
 .target-status-scroll { max-height:calc(100dvh - 380px); }
 select option { background:var(--sticky-surface); color:var(--text); }
 :root[data-theme="light"] .status-cov_active,:root[data-theme="light"] .status-cov_waiting,:root[data-theme="light"] .cov-confirmation-summary { color:#48633a; }
@@ -91,6 +129,11 @@ select option { background:var(--sticky-surface); color:var(--text); }
   .mode-metrics span { min-width:60px; padding:0 12px; }
   .target-toolbar { grid-template-columns:1fr; position:static; }
   .target-filter-buttons { overflow:auto; }
+}
+@media(min-width:1101px) and (max-width:1450px) {
+  .target-toolbar { grid-template-columns:minmax(0,1fr) auto; }
+  .target-search { grid-column:1 / -1; }
+  .target-filter-buttons { justify-self:start; }
 }
 @media(max-width:900px) {
   body { overflow:auto; }
@@ -107,7 +150,7 @@ select option { background:var(--sticky-surface); color:var(--text); }
 }
 @media(max-width:520px) {
   .parent { padding:10px; gap:12px; }
-  .div1 h1 { font-size:21px; flex-wrap:wrap; gap:6px 12px; }
+  .div1 h1 { font-size:28px; flex-wrap:wrap; gap:6px 12px; }
   .brand-section { font-size:15px; gap:12px; }
   .brand-section::before { height:18px; }
   .mode-summary { align-items:stretch; flex-direction:column; gap:14px; }

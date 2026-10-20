@@ -5,8 +5,7 @@
 {%- endmacro %}
 {% set gateway = '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8m-4-4v4M7 8h4m-4 4h8"/><circle cx="17" cy="8" r=".5"/>' %}
 <header class="div1">
-  <div class="brand-mark">{{ icon(gateway) }}</div>
-  <div class="brand-copy"><span class="brand-kicker">ENGELSOFT</span><h1>Engelsoft BACstac <span class="brand-section">{% if page == 'subscriptions' %}Aktualisierungen{% elif page == 'ede' %}EDE-Dateien{% else %}Geräte{% endif %}</span></h1><span class="brand-version">BACnet/IP-Schnittstelle</span></div>
+  <div class="brand-copy"><span class="brand-kicker">ENGELSOFT</span><h1>Engelsoft BACstac <span class="brand-section">{% if page == 'subscriptions' %}Aktualisierungen{% elif page == 'ede' %}EDE-Dateien{% else %}Geräte{% endif %}</span></h1></div>
 </header>
 <nav class="div2" aria-label="Hauptnavigation">
   <a href="./webapp" title="Geräte" aria-label="Geräte" {% if page == 'webapp' %}class="active" aria-current="page"{% endif %}>{{ icon(gateway) }}</a>

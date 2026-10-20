@@ -2,6 +2,26 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.3.13
+20/10/2026
+
+## **Big fonts. Small drama. The gateway went green.**
+
+### Changed — a little less clutter, a little more class
+- Match CoverControl's title typography with Segoe UI Variable Display, weight 540 and responsive 28–38 px sizing. BACstac finally stopped whispering its own name.
+- Remove the extra subtitle and decorative header icon. Two passengers have left the header; nobody missed their stop.
+- Give the existing Beacon integration shortcut a subtle green tint in dark and light mode. Same seat, same destination, easier to spot.
+- Group update filters into one compact segmented control instead of a tiny button convention.
+- Refine the search toolbar with calmer surfaces, consistent spacing and responsive wrapping.
+- Make sortable column headings larger and easier to read, with a fine divider instead of another heavy box. The table has retired its shouting voice.
+- Refresh Web UI cache keys to 1.3.13 so yesterday's CSS does not crash today's outfit party.
+
+### Validation — no BACnet devices were dressed up for this release
+- All 16 unit tests pass, including page rendering and simulated ingress asset loading.
+- Syntax, lint, release metadata and dependency audit checked before publication.
+- These changes affect presentation only; the existing integration-controlled status logic is unchanged.
+- The updated typography and toolbar have not been visually validated in a browser or live Home Assistant.
+
 # 1.3.12
 20/10/2026
 
