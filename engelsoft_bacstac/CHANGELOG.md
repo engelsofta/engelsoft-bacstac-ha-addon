@@ -2,6 +2,26 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.3.15
+20/10/2026
+
+## **Let there be light. And glass. Definitely glass.**
+
+### Fixed — the status strip found its glasses
+- Give the dark-mode status strip the same smoky glass background, blur, border and shadow as the content cards. It was standing in front of the wallpaper pretending to be furniture.
+- Brighten the light-mode background overlay so the header no longer plays hide-and-seek in a grey-and-gold fog.
+- Add a dedicated warm, translucent light surface behind the status summary. The numbers now have somewhere respectable to sit.
+- Improve light-mode text, gold accents and metric contrast. Reading your gateway should not require night-vision goggles at noon.
+
+### Changed — fresh pixels, same plumbing
+- Refresh all Web UI asset cache keys to 1.3.15 and update the README badge URL. Yesterday's CSS has been sent to the recycling bin in spirit.
+- Keep BACnet transport, polling, COV handling and integration-controlled status logic unchanged. The makeover stays above the waterline.
+
+### Validation
+- All 16 unit tests pass, including page rendering and simulated ingress asset loading.
+- Syntax, lint, release metadata and dependency audit checked before publication.
+- The visual adjustments have not been verified in a browser or live Home Assistant for this release.
+
 # 1.3.14
 20/10/2026
 
