@@ -2,6 +2,30 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.3.12
+20/10/2026
+
+## **Same BACnet. Better outfit. Zero subscriptions invited to the fashion show.**
+
+### Changed — BACstac borrowed Beacon's wardrobe
+- Match the companion integration with the original backgrounds, smoky glass cards, restrained gold accents and shared typography. Your gateway has officially discovered interior design.
+- Replace the wide navigation bar with a compact SVG icon rail. On narrow screens, the rail moves upstairs instead of demanding a wider phone.
+- Give Devices, Updates and EDE files one shared page shell, with clear active-page indicators and keyboard focus outlines.
+- Keep the companion BACnet Explorer one click away, on the current Home Assistant address.
+- Show live target totals in a separate status strip, including conditional fallback and disabled counts. The numbers still do the work; they just have nicer seats.
+- Refresh all Web UI cache keys to 1.3.12. Old CSS has been politely escorted out.
+
+### Documentation — one language, fewer plot twists
+- Consolidate the repository README into English and translate the add-on-store README into English.
+- Document the new navigation, EDE management, live runtime settings and bundled backgrounds.
+- Add a Web UI screenshot with clearly labelled sample devices. No actual boiler was recruited as a model.
+- Correct the runtime-settings path to Devices → Runtime.
+
+### Validation — the outfit passed inspection
+- All 16 unit tests pass, including template rendering and simulated Home Assistant ingress requests for the new stylesheet and both background images.
+- Desktop and narrow-screen previews checked locally with sample data across dark/light mode and the three Web UI pages.
+- BACnet transport logic is unchanged. Live Home Assistant and physical BACnet validation have not been performed for this visual update.
+
 # 1.3.11
 05/10/2026
 

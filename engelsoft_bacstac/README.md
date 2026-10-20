@@ -2,61 +2,53 @@
 
 # Engelsoft BACstac
 
-> **Wichtig:** BACstac und **Engelsoft Beacon BACnet/IP** gehören zusammen.
-> Die Verbindung zwischen beiden Komponenten läuft lokal innerhalb von Home
-> Assistant und muss nicht als öffentliche API eingerichtet werden.
+> **Companion required:** BACstac provides the BACnet/IP connection for
+> [**Engelsoft Beacon BACnet/IP**](https://github.com/engelsofta/ha-bepacom-bacnet).
+> Install the integration as well to create devices and entities in Home Assistant.
 
-Engelsoft BACstac stellt die BACnet/IP-Verbindung für **Engelsoft Beacon
-BACnet/IP** bereit. Das Add-on erkennt BACnet-Geräte, liest deren Objekte und
-Werte, verwaltet COV-Abonnements beziehungsweise Polling und stellt die Daten der
-Home-Assistant-Integration zur Verfügung.
+BACstac discovers BACnet/IP devices, reads their objects and values, manages COV
+subscriptions and polling, and supplies the results to the companion integration
+through a local connection.
 
-Neue Installationen starten bewusst mit verwaltetem Polling. Optionales COV wird
-je BACnet-Gerät begrenzt und gedrosselt aufgebaut. Bleiben trotz bestätigter
-Anmeldung Werte aus, wechselt das betroffene Objekt automatisch auf Polling.
+New installations start with managed polling. Optional COV subscriptions are
+limited per device and created at a controlled pace. Objects fall back to polling
+if confirmed subscriptions stop delivering values.
 
-## Das bringt das Add-on mit
+## Highlights
 
-- automatische Erkennung von BACnet/IP-Geräten und Objekten
-- begrenzte, gedrosselte COV-Abonnements mit automatischem Polling-Fallback
-- Zielstatus mit COV-Bestätigung, letzter COV-Nachricht, letztem Poll und Wertealter
-- integrationsgesteuerter Hybridmodus für COV, Polling oder deaktivierte Ziele
-- live aktualisierte Statusleiste mit Modus und aktueller Zielverteilung
-- geprüfter Inventar-Cache für einen robusten Neustart
-- Lesen und Schreiben von BACnet-Werten einschließlich Schreibpriorität
-- Betrieb als normales BACnet/IP-Gerät oder als Foreign Device an einem BBMD
-- Ingress-Weboberfläche für Geräte, Objekte, Abonnements und Diagnose mit
-  automatischem Dark und Light Mode
-- deutsche, englische und niederländische Konfigurationstexte
+- Automatic discovery of BACnet/IP devices and objects.
+- Integration-controlled COV, polling and disabled targets, with COV limits and automatic polling fallback.
+- Live target status: COV confirmation, latest notification, latest poll and value age.
+- Validated inventory cache for restarts.
+- BACnet reads and writes with configurable write priority.
+- Normal BACnet/IP operation or foreign-device registration with a BBMD.
+- Matching Engelsoft glass design, bundled backgrounds and automatic light/dark mode.
+- Responsive icon navigation for Devices, Updates, EDE files and the companion BACnet Explorer.
+- Device search, object details, device protection and runtime settings that apply without restarting.
+- German and English Web UI; German, English and Dutch configuration descriptions.
+- Prebuilt images for `amd64` and `aarch64`.
 
-## Wichtig: Integration und Add-on gehören zusammen
+## Web UI
 
-BACstac übernimmt die Kommunikation mit dem BACnet-Netzwerk. Die Integration
-[**Engelsoft Beacon BACnet/IP**](https://github.com/engelsofta/ha-bepacom-bacnet) erzeugt daraus die Geräte und Entitäten in Home
-Assistant. Das Add-on selbst exportiert bewusst keine Home-Assistant-Entitäten.
+Open **Web UI** on the add-on page. Use **Devices** to inspect objects and device
+protection, **Updates** for COV/polling status, and **EDE files** to manage imports.
+The **Runtime** tab under Devices contains live update settings. The Explorer
+icon opens the companion integration in Home Assistant.
 
-Nach der Installation des Add-ons muss daher zusätzlich Engelsoft Beacon
-BACnet/IP in Home Assistant eingerichtet werden.
+The navigation appears on the left on desktop and above the content on narrow
+screens. Background images are included in the add-on itself.
 
-Ausführliche Konfigurationshinweise findest du in der Registerkarte
-**Dokumentation** beziehungsweise in [DOCS.md](DOCS.md).
+See the **Documentation** tab or [DOCS.md](DOCS.md) for connection options,
+networking and configuration details.
 
-## Unterstützung
+## Support
 
-Prüfe bei Problemen zuerst das Add-on-Protokoll und die Diagnoseansicht. Fehler
-können im [GitHub-Repository](https://github.com/engelsofta/engelsoft-bacstac-ha-addon/issues)
-gemeldet werden.
+Check the add-on log and update-target status before reporting an issue at
+[GitHub Issues](https://github.com/engelsofta/engelsoft-bacstac-ha-addon/issues).
 
-![Supports aarch64 Architecture][aarch64-shield]
-![Supports amd64 Architecture][amd64-shield]
+## License and origin
 
-## Lizenz und Herkunft
-
-Engelsoft BACstac ist eine wesentlich veränderte Weiterentwicklung des
-[Bepacom BACnet/IP Add-ons](https://github.com/Bepacom-Raalte/bepacom-HA-Addons)
-und wird unter der Apache License 2.0 verteilt. Die ursprüngliche Lizenz und die
-Herkunftshinweise befinden sich im Wurzelverzeichnis des Repositories in
-[`LICENSE`](../LICENSE) und [`NOTICE`](../NOTICE).
-
-[aarch64-shield]: https://img.shields.io/badge/aarch64-yes-green.svg
-[amd64-shield]: https://img.shields.io/badge/amd64-yes-green.svg
+Engelsoft BACstac is a substantially modified continuation of the
+[Bepacom BACnet/IP add-on](https://github.com/Bepacom-Raalte/bepacom-HA-Addons),
+distributed under the Apache License 2.0. Original license and origin notices are
+preserved in [LICENSE](../LICENSE) and [NOTICE](../NOTICE).

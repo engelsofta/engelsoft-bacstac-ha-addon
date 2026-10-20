@@ -1,0 +1,26 @@
+{# Shared Engelsoft shell; all asset and internal URLs remain ingress-relative. #}
+{% set page = request.url.path.split('/')[-1] %}
+{% macro icon(paths) -%}
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{{ paths|safe }}</svg>
+{%- endmacro %}
+{% set gateway = '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8m-4-4v4M7 8h4m-4 4h8"/><circle cx="17" cy="8" r=".5"/>' %}
+<header class="div1">
+  <div class="brand-mark">{{ icon(gateway) }}</div>
+  <div class="brand-copy"><span class="brand-kicker">ENGELSOFT</span><h1>Engelsoft BACstac <span class="brand-section">{% if page == 'subscriptions' %}Aktualisierungen{% elif page == 'ede' %}EDE-Dateien{% else %}Geräte{% endif %}</span></h1><span class="brand-version">BACnet/IP-Schnittstelle</span></div>
+</header>
+<nav class="div2" aria-label="Hauptnavigation">
+  <a href="./webapp" title="Geräte" aria-label="Geräte" {% if page == 'webapp' %}class="active" aria-current="page"{% endif %}>{{ icon(gateway) }}</a>
+  <a href="./subscriptions" title="Aktualisierungen" aria-label="Aktualisierungen" {% if page == 'subscriptions' %}class="active" aria-current="page"{% endif %}>{{ icon('<path d="M3 12h4l3-7 4 14 3-7h4"/>') }}</a>
+  <a href="./ede" title="EDE-Dateien" aria-label="EDE-Dateien" {% if page == 'ede' %}class="active" aria-current="page"{% endif %}>{{ icon('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M8 13h8m-8 4h6"/>') }}</a>
+  <a href="/bepacom_explorer" target="_top" title="BACnet Explorer öffnen" aria-label="BACnet Explorer öffnen">{{ icon('<path d="M8 21h8l-1-10H9L8 21ZM9 7a3 3 0 0 1 6 0v4H9V7ZM3 7h2m14 0h2M5 2l2 2m10 0 2-2M12 1v2"/>') }}</a>
+</nav>
+<section class="mode-summary mode-{{ sidebar.mode }}" aria-label="Aktualisierungsstatus">
+  <div class="mode-title"><small>AKTUALISIERUNGSSTEUERUNG</small><strong data-mode-label>{{ sidebar.label }}</strong></div>
+  <div class="mode-metrics">
+    <span data-mode-metric="targets"><b>{{ sidebar.targets }}</b> Ziele</span>
+    <span data-mode-metric="cov"><b>{{ sidebar.cov }}</b> COV</span>
+    <span data-mode-metric="polling"><b>{{ sidebar.polling }}</b> Polling</span>
+    <span data-mode-metric="fallback" class="mode-warning" {% if not sidebar.fallback %}hidden{% endif %}><b>{{ sidebar.fallback }}</b> Fallback</span>
+    <span data-mode-metric="disabled" {% if not sidebar.disabled %}hidden{% endif %}><b>{{ sidebar.disabled }}</b> aus</span>
+  </div>
+</section>

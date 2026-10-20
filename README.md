@@ -2,8 +2,6 @@
 
 # Engelsoft BACstac for Home Assistant
 
-[Deutsch](README.de.md) | **English**
-
 [![Release](https://img.shields.io/github/v/release/engelsofta/engelsoft-bacstac-ha-addon?display_name=tag&cacheSeconds=300)](https://github.com/engelsofta/engelsoft-bacstac-ha-addon/releases/latest)
 [![Build](https://github.com/engelsofta/engelsoft-bacstac-ha-addon/actions/workflows/build.yaml/badge.svg)](https://github.com/engelsofta/engelsoft-bacstac-ha-addon/actions/workflows/build.yaml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
@@ -28,9 +26,12 @@ changes through a local integration connection for **Engelsoft Beacon BACnet/IP*
   most recently completed object inventory available early after a restart.
 - **Clear separation of responsibilities:** BACstac communicates with BACnet;
   Engelsoft Beacon BACnet/IP manages devices and entities in Home Assistant.
-- **Ingress web interface:** Inspect devices, objects, subscriptions and
-  diagnostics directly in Home Assistant. Dark and light mode follow the Home
-  Assistant theme, while German and English follow the selected interface language.
+- **Matching Engelsoft design:** The same background images, smoky glass cards,
+  typography and gold accents as the companion integration, with automatic
+  light/dark mode and a responsive layout.
+- **Ingress web interface:** Browse devices and objects, inspect COV/polling
+  targets, manage EDE files and open the companion BACnet Explorer from the
+  compact icon navigation. German and English follow the interface language.
 - **BACnet writes:** Supports write requests with a configurable BACnet priority.
 - **Flexible networking:** Supports normal BACnet/IP operation and foreign-device
   registration with a BBMD.
@@ -54,6 +55,26 @@ Engelsoft Beacon BACnet/IP
 The add-on intentionally does not create Home Assistant entities. That is the
 responsibility of the **Engelsoft Beacon BACnet/IP** integration. This keeps
 BACnet communication separate from Home Assistant's device and entity model.
+
+## Web interface
+
+![BACstac glass interface with illustrative sample devices](docs/images/bacstac-webui.png)
+
+*Preview with illustrative sample devices; actual devices and values depend on your network.*
+
+Open **Web UI** from the add-on page. The icon navigation provides:
+
+- **Devices:** Search devices, expand their objects and inspect current values.
+  Select a device to review its properties and protection rules. The **Runtime**
+  tab contains settings that apply without restarting the add-on.
+- **Updates:** Inspect COV and polling status, filter and sort update targets,
+  and manage individual COV subscriptions.
+- **EDE files:** Upload EDE files and state texts, or remove selected imports.
+- **BACnet Explorer:** Open the companion integration in Home Assistant.
+
+Navigation sits on the left on desktop and moves above the content on narrow
+screens. Background images are bundled with BACstac, so its appearance does not
+depend on the integration's static files being available.
 
 ## Installation
 

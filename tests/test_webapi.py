@@ -70,7 +70,15 @@ class WebApiTests(unittest.TestCase):
         self.assertEqual(css.headers["content-type"], "text/css; charset=utf-8")
         self.assertEqual(javascript.status_code, 200)
         self.assertIn("javascript", javascript.headers["content-type"])
-        self.assertIn("/api/hassio_ingress/test-token/static/css/styles.css?v=1.3.11", html.text)
+        self.assertIn("/api/hassio_ingress/test-token/static/css/styles.css?v=1.3.12", html.text)
+        self.assertIn("/api/hassio_ingress/test-token/static/css/engelsoft-theme.css?", html.text)
+        for asset in (
+            "css/engelsoft-theme.css",
+            "images/engelsoft-background-dark.png",
+            "images/engelsoft-background-light.png",
+        ):
+            with self.subTest(asset=asset):
+                self.assertEqual(client.get(f"/static/{asset}").status_code, 200)
 
     def test_static_route_rejects_path_traversal(self) -> None:
         response = asyncio.run(webAPI.static_asset("../../config.yaml"))

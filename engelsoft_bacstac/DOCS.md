@@ -80,7 +80,16 @@ Optional shared secret for the internal connection to Engelsoft Beacon BACnet/IP
 
 ### Live update settings
 
-Polling interval, COV registration delay, COV verification time and fallback write priority are configured under **Devices → Operation** in the sidebar. They are stored persistently and applied without restarting the add-on.
+Polling interval, COV registration delay, COV verification time and fallback write priority are configured under **Devices → Runtime** in the Web UI (**Geräte → Betrieb** in German). They are stored persistently and applied without restarting the add-on.
+
+### Web UI navigation
+
+The compact icon bar links to Devices, Updates, EDE files and the companion
+BACnet Explorer. It appears on the left on desktop and above the content on
+narrow screens. The Web UI shares the integration's Engelsoft glass design,
+including bundled background images, gold accents and automatic light/dark mode.
+The Explorer link opens the integration outside the ingress frame on the current
+Home Assistant address.
 
 ### Options: safe update handling
 
