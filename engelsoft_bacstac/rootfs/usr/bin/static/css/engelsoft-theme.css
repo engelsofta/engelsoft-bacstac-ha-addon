@@ -118,6 +118,9 @@ body[data-page="ede"] .div5::before { content:"EDE-Dateien verwalten"; }
 }
 .target-status-header button { min-height:28px; gap:7px; }
 .target-status-header button i::after { opacity:.55; font-size:12px; }
+.target-identity { display:grid; grid-template-columns:15px minmax(0,1fr); gap:9px; }
+.target-identity > input { grid-column:1; grid-row:1; margin:0; }
+.target-identity > span { grid-column:2; grid-row:1; }
 .target-status-scroll { max-height:calc(100dvh - 380px); }
 select option { background:var(--sticky-surface); color:var(--text); }
 :root[data-theme="light"] .status-cov_active,:root[data-theme="light"] .status-cov_waiting,:root[data-theme="light"] .cov-confirmation-summary { color:#48633a; }

@@ -2,6 +2,26 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.3.14
+20/10/2026
+
+## **Everybody get in line. Yes, you too, Polling.**
+
+### Fixed — the checkbox no longer gets a head start
+- Reserve the same checkbox column in every update-target row, including polling rows without a checkbox.
+- Align device and object IDs consistently across COV and polling targets. One shared list, zero queue-jumping privileges.
+- Keep the existing row order, filters and subscription controls. Nobody was sorted into a separate lunch table.
+
+### Changed — name tags are back in fashion
+- Set the small header label to BACstac on all three Web UI pages. The gateway now remembers what its name tag says.
+- Refresh Web UI asset cache keys to 1.3.14 and the README badge URL. Yesterday's pixels can take the day off.
+
+### Validation
+- All 16 unit tests pass, including template rendering and simulated ingress asset loading.
+- Syntax, lint, release metadata and dependency audit checked before publication.
+- Presentation-only changes; BACnet transport and subscription behavior are unchanged.
+- Visual alignment has not been verified in a browser or live Home Assistant for this release.
+
 # 1.3.13
 20/10/2026
 
