@@ -1,11 +1,11 @@
 <!-- Modified by engelsofta in 2026; derived from the Bepacom BACnet/IP add-on. -->
 <!DOCTYPE html><html lang="de"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<script src="{{ url_for('static', path='js/theme.js') }}?v=1.3.16"></script>
-<script src="{{ url_for('static', path='js/locale.js') }}?v=1.3.16"></script>
-<script defer src="{{ url_for('static', path='js/mode-status.js') }}?v=1.3.16"></script>
-<link href="{{ url_for('static', path='css/styles.css') }}?v=1.3.16" rel="stylesheet">
-<title>Engelsoft BACstac</title><link href="{{ url_for('static', path='css/engelsoft-theme.css') }}?v=1.3.16" rel="stylesheet">
+<script src="{{ url_for('static', path='js/theme.js') }}?v=1.3.17"></script>
+<script src="{{ url_for('static', path='js/locale.js') }}?v=1.3.17"></script>
+<script defer src="{{ url_for('static', path='js/mode-status.js') }}?v=1.3.17"></script>
+<link href="{{ url_for('static', path='css/styles.css') }}?v=1.3.17" rel="stylesheet">
+<title>Engelsoft BACstac</title><link href="{{ url_for('static', path='css/engelsoft-theme.css') }}?v=1.3.17" rel="stylesheet">
 </head><body data-page="webapp"><div class="parent">
 {% include "shell.html" %}
 <div class="div4">
@@ -57,7 +57,16 @@ byId("save-protection").addEventListener("click",()=>saveProtection());
 byId("reset-protection").addEventListener("click",()=>saveProtection(true));
 document.querySelectorAll(".panel-tabs button").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll(".panel-tabs button").forEach(x=>x.classList.toggle("active",x===b));byId("panel-protection").hidden=b.dataset.panel!=="protection";byId("panel-runtime").hidden=b.dataset.panel!=="runtime"}));
 async function loadRuntime(){const r=await fetch("./apiv1/runtime-settings"),s=await r.json();byId("runtime-poll").value=s.managed_poll_rate;byId("runtime-delay").value=s.managed_cov_subscription_delay_ms;byId("runtime-fallback").value=s.managed_cov_fallback_timeout;byId("runtime-priority").value=s.defaultPriority;for(const mode of ["local","utc"]){byId(`time-sync-${mode}`).checked=!!s[`time_sync_${mode}`];byId(`test-time-${mode}`).disabled=!s[`time_sync_${mode}`]}}
-byId("save-runtime").addEventListener("click",async()=>{const p={managed_poll_rate:+byId("runtime-poll").value,managed_cov_subscription_delay_ms:+byId("runtime-delay").value,managed_cov_fallback_timeout:+byId("runtime-fallback").value,defaultPriority:+byId("runtime-priority").value,time_sync_local:byId("time-sync-local").checked,time_sync_utc:byId("time-sync-utc").checked};const r=await fetch("./apiv1/runtime-settings",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});byId("runtime-message").textContent=r.ok?"Gespeichert und live übernommen.":"Speichern fehlgeschlagen.";if(r.ok)await loadRuntime()});
+byId("save-runtime").addEventListener("click",async()=>{
+const form=byId("runtime-form"),button=byId("save-runtime"),message=byId("runtime-message");
+if(!form.reportValidity())return;
+const p={managed_poll_rate:+byId("runtime-poll").value,managed_cov_subscription_delay_ms:+byId("runtime-delay").value,managed_cov_fallback_timeout:+byId("runtime-fallback").value,defaultPriority:+byId("runtime-priority").value,time_sync_local:byId("time-sync-local").checked,time_sync_utc:byId("time-sync-utc").checked};
+const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
+button.disabled=true;message.textContent="Wird übernommen …";
+try{const r=await fetch("./apiv1/runtime-settings",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(p),signal:controller.signal});if(!r.ok)throw new Error(await r.text()||"Speichern fehlgeschlagen.");const saved=await r.json();for(const mode of ["local","utc"])byId(`test-time-${mode}`).disabled=!saved[`time_sync_${mode}`];message.textContent="Gespeichert und live übernommen."}
+catch(error){message.textContent=error.name==="AbortError"?"Keine rechtzeitige Antwort. Bitte Seite neu laden und gespeicherte Einstellungen prüfen.":error.message}
+finally{clearTimeout(timer);button.disabled=false}
+});
 for(const mode of ["local","utc"])byId(`test-time-${mode}`).addEventListener("click",async()=>{const message=byId("time-sync-message"),device=byId("time-sync-device").value;if(!device){message.textContent="Bitte Gerät auswählen.";return}for(const m of ["local","utc"])byId(`test-time-${m}`).disabled=true;message.textContent="Zeit wird gesetzt und geprüft …";try{const r=await fetch("./apiv1/time-sync",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({device_id:device,mode})});if(!r.ok)throw new Error(await r.text());const result=await r.json();message.textContent=result.status==="unverified"?"Gesendet; Gerätezeit konnte nicht zurückgelesen werden.":`${result.status==="matched"?"Gerätezeit stimmt überein":"Gerätezeit weicht ab"} · ${result.difference_seconds} s · ${result.before} → ${result.after}. Keine Empfangsbestätigung des Zeitbefehls.`}catch(error){message.textContent=error.message}finally{await loadRuntime()}});
 let latestValues={},wsUrl=location.href.replace("http","ws").replace("webapp","ws"),ws=new WebSocket(wsUrl);function updateVisibleRows(){if(!expandedDevice)return;document.querySelectorAll(`.object-row[data-device="${CSS.escape(expandedDevice)}"]`).forEach(row=>{const rect=row.getBoundingClientRect();if(rect.bottom<0||rect.top>innerHeight)return;const obj=latestValues[expandedDevice]?.[row.dataset.object];if(!obj)return;row.querySelectorAll(".property-row").forEach(line=>{const key=line.dataset.property;if(key in obj)line.querySelector("span").textContent=String(obj[key])});if("presentValue" in obj)row.querySelector(".object-value").textContent=String(obj.presentValue)})}ws.onmessage=e=>{let data;try{data=JSON.parse(e.data)}catch{return}Object.entries(data).forEach(([device,objects])=>{latestValues[device]??={};Object.entries(objects).forEach(([object,properties])=>latestValues[device][object]={...(latestValues[device][object]||{}),...properties})});updateVisibleRows()};document.querySelector(".div4").addEventListener("scroll",updateVisibleRows,{passive:true});
 fillDeviceSearch();renderProtection();loadRuntime();

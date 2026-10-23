@@ -414,6 +414,11 @@ async def set_runtime_settings(request: Request):
     application = bacnet_application
     if application is None:
         return Response(status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
+    previous_transport = (
+        application.managed_poll_rate,
+        round(application.managed_cov_subscription_delay_seconds * 1000),
+        application.managed_cov_fallback_timeout,
+    )
     try:
         settings = save_runtime_settings(await request.json())
     except (TypeError, ValueError, OSError) as err:
@@ -422,7 +427,18 @@ async def set_runtime_settings(request: Request):
     application.managed_cov_subscription_delay_seconds = settings["managed_cov_subscription_delay_ms"] / 1000
     application.managed_cov_fallback_timeout = settings["managed_cov_fallback_timeout"]
     application.default_write_priority = settings["defaultPriority"]
-    await application.reapply_managed_targets()
+    current_transport = tuple(settings[key] for key in (
+        "managed_poll_rate", "managed_cov_subscription_delay_ms", "managed_cov_fallback_timeout"
+    ))
+    if previous_transport != current_transport:
+        try:
+            await application.reapply_managed_targets()
+        except TimeoutError:
+            LOGGER.warning("Runtime settings saved, but COV cleanup did not finish in time")
+            return Response(
+                content="Einstellungen gespeichert, aber COV-Anmeldungen konnten nicht rechtzeitig beendet werden. Add-on neu starten.",
+                status_code=503,
+            )
     return settings
 
 

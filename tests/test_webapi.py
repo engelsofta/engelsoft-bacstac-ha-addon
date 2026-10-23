@@ -70,7 +70,7 @@ class WebApiTests(unittest.TestCase):
         self.assertEqual(css.headers["content-type"], "text/css; charset=utf-8")
         self.assertEqual(javascript.status_code, 200)
         self.assertIn("javascript", javascript.headers["content-type"])
-        self.assertIn("/api/hassio_ingress/test-token/static/css/styles.css?v=1.3.16", html.text)
+        self.assertIn("/api/hassio_ingress/test-token/static/css/styles.css?v=1.3.17", html.text)
         self.assertIn("/api/hassio_ingress/test-token/static/css/engelsoft-theme.css?", html.text)
         for asset in (
             "css/engelsoft-theme.css",
@@ -86,6 +86,33 @@ class WebApiTests(unittest.TestCase):
 
 
 class ProtectionSaveTests(unittest.IsolatedAsyncioTestCase):
+    async def test_runtime_clock_switch_does_not_restart_cov(self):
+        from types import SimpleNamespace
+        from unittest.mock import AsyncMock, patch
+        from runtime_settings import normalize
+        settings = normalize({"time_sync_utc": True})
+        application = SimpleNamespace(managed_poll_rate=10,
+            managed_cov_subscription_delay_seconds=1, managed_cov_fallback_timeout=30,
+            reapply_managed_targets=AsyncMock())
+        with patch.object(webAPI, "bacnet_application", application), patch.object(webAPI, "save_runtime_settings", return_value=settings):
+            result = await webAPI.set_runtime_settings(SimpleNamespace(json=AsyncMock(return_value=settings)))
+        self.assertTrue(result["time_sync_utc"])
+        application.reapply_managed_targets.assert_not_awaited()
+
+    async def test_runtime_poll_change_reapplies_and_reports_cleanup_timeout(self):
+        from types import SimpleNamespace
+        from unittest.mock import AsyncMock, patch
+        from runtime_settings import normalize
+        settings = normalize({"managed_poll_rate": 20})
+        application = SimpleNamespace(managed_poll_rate=10,
+            managed_cov_subscription_delay_seconds=1, managed_cov_fallback_timeout=30,
+            reapply_managed_targets=AsyncMock(side_effect=TimeoutError))
+        with patch.object(webAPI, "bacnet_application", application), patch.object(webAPI, "save_runtime_settings", return_value=settings):
+            result = await webAPI.set_runtime_settings(SimpleNamespace(json=AsyncMock(return_value=settings)))
+        application.reapply_managed_targets.assert_awaited_once()
+        self.assertEqual(result.status_code, 503)
+        self.assertIn("Einstellungen gespeichert", result.body.decode())
+
     async def test_iam_switches_preserve_cov_subscriptions(self):
         from types import SimpleNamespace
         from unittest.mock import AsyncMock

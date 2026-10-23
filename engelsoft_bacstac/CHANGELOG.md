@@ -2,6 +2,27 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.3.17
+23/10/2026
+
+## Keep COV calm and carry on.
+
+### Fixed — Apply is a button, not an evacuation drill
+- Stop rebuilding every COV/polling target when you only change time synchronization switches or the default write priority. Your subscriptions no longer pack their bags because someone touched a clock.
+- Reapply the transport plan only when polling interval, COV subscription spacing or fallback timeout actually changes.
+- Report COV cleanup timeouts explicitly, including that settings were already saved. Silence is golden, except when a settings page is waiting for an answer.
+
+### Improved — the settings button now has manners
+- Show progress while saving and prevent repeated clicks from forming an impatient queue.
+- Add a 15-second browser request timeout and display server errors instead of leaving users to negotiate with an apparently frozen page.
+- Validate input before sending and update time-test button availability directly from the saved response.
+- Refresh Web UI cache keys so the improved saving flow actually arrives at your browser's doorstep.
+
+### Validation — checked before coffee went cold
+- All 23 unit tests pass, including regression coverage for time-switch changes preserving COV subscriptions and explicit cleanup-timeout reporting.
+- Template rendering, simulated ingress asset loading, syntax, lint and release metadata checks pass locally.
+- This release removes an unnecessary COV restart trigger. It does **not** establish that the separately observed full backend stall has been resolved; no live Home Assistant or BACnet device verification has been performed.
+
 # 1.3.16
 23/10/2026
 
