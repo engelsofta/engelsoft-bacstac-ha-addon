@@ -443,6 +443,27 @@ async def set_runtime_settings(request: Request):
 
 
 _time_sync_lock = asyncio.Lock()
+last_time_sync: dict = {}
+
+
+async def tracked_time_sync(application, device_id, mode):
+    """Expose the latest attempt from manual and scheduled synchronization."""
+    global last_time_sync
+    entry = {"device_id": device_id, "mode": mode,
+             "timestamp": datetime.now(timezone.utc).isoformat(), "status": "running"}
+    last_time_sync = entry
+    try:
+        result = await asyncio.wait_for(synchronize(application, device_id, mode), 45)
+        entry.update(result)
+        return result
+    except Exception:
+        entry["status"] = "failed"
+        raise
+
+
+@app.get("/apiv1/time-sync/status", tags=["apiv1"])
+async def time_sync_status():
+    return last_time_sync
 
 
 async def daily_time_sync():
@@ -471,7 +492,7 @@ async def daily_time_sync():
                     services = await asyncio.wait_for(application.read_property(address, device, "protocolServicesSupported"), 5)
                     mode = supported_mode(services, load_runtime_settings())
                     if mode:
-                        result = await asyncio.wait_for(synchronize(application, device_id, mode), 45)
+                        result = await tracked_time_sync(application, device_id, mode)
                         LOGGER.info("Daily %s time synchronization for %s: %s", mode, device_id, result)
             except Exception:
                 LOGGER.warning("Daily time synchronization failed for %s", device_id, exc_info=True)
@@ -491,7 +512,7 @@ async def test_time_sync(request: Request):
         if _time_sync_lock.locked():
             return Response(content="Time synchronization already running", status_code=409)
         async with _time_sync_lock:
-            return await asyncio.wait_for(synchronize(bacnet_application, payload["device_id"], mode), 45)
+            return await tracked_time_sync(bacnet_application, payload["device_id"], mode)
     except (ValueError, TypeError, KeyError) as err:
         return Response(content=str(err), status_code=422)
     except Exception:

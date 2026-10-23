@@ -21,5 +21,6 @@
     <span data-mode-metric="polling"><b>{{ sidebar.polling }}</b> Polling</span>
     <span data-mode-metric="fallback" class="mode-warning" {% if not sidebar.fallback %}hidden{% endif %}><b>{{ sidebar.fallback }}</b> Fallback</span>
     <span data-mode-metric="disabled" {% if not sidebar.disabled %}hidden{% endif %}><b>{{ sidebar.disabled }}</b> aus</span>
+    <div class="time-sync-summary" aria-live="polite"><small>ZEITSYNCHRONISIERUNG</small><b data-time-sync-title>Noch kein Lauf</b><small data-time-sync-detail>Seit Add-on-Start</small></div>
   </div>
 </section>

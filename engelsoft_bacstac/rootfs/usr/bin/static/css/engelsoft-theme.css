@@ -179,3 +179,11 @@ select option { background:var(--sticky-surface); color:var(--text); }
   .device-row > span:nth-child(2) { min-width:0; overflow-wrap:anywhere; }
 }
 @media(prefers-reduced-motion:reduce) { *,*::before,*::after { animation:none!important; transition:none!important; scroll-behavior:auto!important; } }
+
+/* Latest device time synchronization; compact beside the status counters. */
+.time-sync-summary { min-width:190px; max-width:360px; padding-left:20px; border-left:1px solid var(--line); display:flex; flex-direction:column; justify-content:center; gap:5px; }
+.time-sync-summary > b { font-size:13px; font-weight:500; margin:0; }
+.time-sync-summary > small { font-size:10px; letter-spacing:0; overflow-wrap:anywhere; }
+.time-sync-summary[data-status="failed"] > b,.time-sync-summary[data-status="mismatch"] > b { color:var(--gold); }
+.mode-metrics { flex-wrap:wrap; row-gap:12px; }
+@media(max-width:700px) { .time-sync-summary { flex-basis:100%; max-width:none; padding:10px 0 0; border-left:0; border-top:1px solid var(--line); } }

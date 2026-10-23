@@ -51,6 +51,7 @@ async def synchronize(application, device_id: str, mode: str) -> dict:
     local_delta = timedelta(minutes=-offset + (60 if daylight else 0))
     before = DateTime(date=await read("localDate"), time=await read("localTime")).datetime
     sent = datetime.now(timezone.utc).replace(tzinfo=None)
+    before_difference = (before - (sent + local_delta)).total_seconds()
     target = sent if mode == "utc" else sent + local_delta
     request_type = UTCTimeSynchronizationRequest if mode == "utc" else TimeSynchronizationRequest
     await application.request(request_type(time=DateTime(target), destination=address))
@@ -61,6 +62,7 @@ async def synchronize(application, device_id: str, mode: str) -> dict:
         difference = abs((after - expected).total_seconds())
         return {"status": "matched" if difference <= 5 else "mismatch",
                 "before": before.isoformat(), "after": after.isoformat(),
-                "difference_seconds": round(difference, 2)}
+                "difference_seconds": round(difference, 2),
+                "before_difference_seconds": round(before_difference, 2)}
     except Exception:
         return {"status": "unverified", "before": before.isoformat()}

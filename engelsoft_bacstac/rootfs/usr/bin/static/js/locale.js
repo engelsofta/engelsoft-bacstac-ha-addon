@@ -1,6 +1,7 @@
 // Created by engelsofta in 2026 for the modified Engelsoft BACstac distribution.
 (() => {
   const translations = [
+    ["ZEITSYNCHRONISIERUNG", "TIME SYNCHRONIZATION"], ["Noch kein Lauf", "No run yet"], ["Seit Add-on-Start", "Since add-on start"],
     ["Lokale Zeitsynchronisierung", "Local time synchronization"],
     ["UTC-Zeitsynchronisierung", "UTC time synchronization"],
     ["Täglich lokale Gerätezeit setzen · Standard: Aus", "Set local device time daily · Default: Off"],

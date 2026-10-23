@@ -2,6 +2,29 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.3.19
+23/10/2026
+
+## About time your clocks got a status update.
+
+### Added — the clocks have entered the chat
+- Add a compact time synchronization summary beside the header counters. Your gateway now wears a watch, and it actually tells you something useful.
+- Show the latest device attempt's timestamp, device ID, local/UTC mode and verification result.
+- Display measured absolute clock deviation **before → after**, such as **18.4 → 0.6 seconds**. Less time travel, more useful numbers.
+- Update the same summary for manual tests and scheduled daily synchronization. One clock desk, no departmental rivalry.
+
+### Details — punctuality with receipts, almost
+- Distinguish verified time, remaining drift, unavailable read-back, running attempts and failures.
+- Refresh the summary every five seconds and move it beneath the counters on narrow screens. Even small screens deserve to be on time.
+- Add German and English text and refresh Web UI cache keys.
+- Keep the latest attempt in memory; after an add-on restart the display starts with **No run yet**. This is the latest device attempt, not a history or a fleet-wide success report.
+- Clock agreement is read-back evidence, not an acknowledgement that the device received the synchronization command. BACnet still refuses to sign the delivery slip.
+
+### Validation — checked against more than a sundial
+- All 25 unit tests pass, including status tracking for successful and failed synchronization attempts.
+- Template rendering, simulated ingress asset loading, syntax, lint and release metadata checks pass locally.
+- The new summary has not yet been visually verified in live Home Assistant or tested against a live BACnet device.
+
 # 1.3.18
 23/10/2026
 

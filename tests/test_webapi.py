@@ -70,7 +70,7 @@ class WebApiTests(unittest.TestCase):
         self.assertEqual(css.headers["content-type"], "text/css; charset=utf-8")
         self.assertEqual(javascript.status_code, 200)
         self.assertIn("javascript", javascript.headers["content-type"])
-        self.assertIn("/api/hassio_ingress/test-token/static/css/styles.css?v=1.3.18", html.text)
+        self.assertIn("/api/hassio_ingress/test-token/static/css/styles.css?v=1.3.19", html.text)
         self.assertIn("/api/hassio_ingress/test-token/static/css/engelsoft-theme.css?", html.text)
         for asset in (
             "css/engelsoft-theme.css",
@@ -86,6 +86,19 @@ class WebApiTests(unittest.TestCase):
 
 
 class ProtectionSaveTests(unittest.IsolatedAsyncioTestCase):
+    async def test_time_sync_status_tracks_success_and_failure(self):
+        from unittest.mock import AsyncMock, patch
+        with patch.object(webAPI, "last_time_sync", {}), patch.object(webAPI, "synchronize", new=AsyncMock(return_value={"status": "matched", "difference_seconds": .5, "before_difference_seconds": -20})):
+            await webAPI.tracked_time_sync(object(), "device:1", "utc")
+            result = await webAPI.time_sync_status()
+            self.assertEqual(result["device_id"], "device:1")
+            self.assertEqual(result["before_difference_seconds"], -20)
+            self.assertEqual(result["status"], "matched")
+        with patch.object(webAPI, "last_time_sync", {}), patch.object(webAPI, "synchronize", new=AsyncMock(side_effect=TimeoutError)):
+            with self.assertRaises(TimeoutError):
+                await webAPI.tracked_time_sync(object(), "device:2", "local")
+            self.assertEqual((await webAPI.time_sync_status())["status"], "failed")
+
     async def test_runtime_clock_switch_does_not_restart_cov(self):
         from types import SimpleNamespace
         from unittest.mock import AsyncMock, patch
