@@ -175,6 +175,7 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
         self.managed_poll_targets: set[tuple[str, str]] = set()
         self.managed_cov_task_names: set[str] = set()
         self.managed_cov_reconcile_task: asyncio.Task | None = None
+        self._cov_unsubscribe_slots = asyncio.Semaphore(4)
         self.managed_targets: set[tuple[str, str]] = set()
         self.managed_disabled_targets: set[tuple[str, str]] = set()
         self.managed_requested_modes: dict[tuple[str, str], str] = {}
@@ -2869,7 +2870,8 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
             )
 
             if unsubscribe_cov_request and not self._shutting_down:
-                await self.request(unsubscribe_cov_request)
+                await self._bounded_cov_unsubscribe(unsubscribe_cov_request)
+            raise
 
         except Exception as err:
             self.subscription_diagnostics["subscription_failures"] += 1
@@ -2884,9 +2886,19 @@ class BACnetIOHandler(NormalApplication, ForeignApplication):
 
             # send the request, wait for the response
             if unsubscribe_cov_request:
-                await self.request(unsubscribe_cov_request)
+                await self._bounded_cov_unsubscribe(unsubscribe_cov_request)
         finally:
             self._active_cov_subscriptions.pop(target, None)
+
+    async def _bounded_cov_unsubscribe(self, request) -> None:
+        """Avoid exhausting the 256 invoke IDs during mass COV cancellation."""
+        try:
+            async with self._cov_unsubscribe_slots:
+                await asyncio.wait_for(self.request(request), timeout=2)
+        except (Exception, asyncio.CancelledError) as err:
+            if isinstance(err, asyncio.CancelledError):
+                raise
+            LOGGER.debug("COV unsubscribe did not complete: %s", err)
 
     async def unsubscribe_all(self, timeout: float = 10.0) -> None:
         """Best-effort cancellation of every confirmed remote COV subscription."""

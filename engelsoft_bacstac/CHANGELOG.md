@@ -2,6 +2,27 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.3.18
+23/10/2026
+
+## COV me maybe — but only four at a time.
+
+### Fixed — the unsubscribe queue discovered queueing
+- Limit normal COV cleanup to four simultaneous unsubscribe requests. Hundreds of subscriptions no longer rush the BACnet counter like shoppers on Black Friday.
+- Add a two-second response timeout per active unsubscribe request. A silent controller no longer gets to hold that queue slot forever.
+- Preserve task cancellation after cleanup, so cancelled subscription workers actually leave the party.
+- Apply the bounded cleanup to cancellation and exception paths used during COV reconfiguration.
+
+### Why the bouncer is here
+- Rebuilding subscriptions after settings changes can trigger a large batch of confirmed BACnet requests. The underlying library has only 256 invoke identifiers per destination; exhausting them can trap allocation in a loop and stop the backend from responding.
+- This release limits the cleanup burst that can trigger that condition. Polling, COV timing and device protection settings benefit from the shared cleanup guard.
+- Refresh Web UI cache keys and release metadata. Even the browser deserves to know which party it is attending.
+
+### Validation — 600 guests, four at the counter
+- All 24 unit tests pass, including 600 simulated unsubscribe requests with at most four active requests.
+- Syntax, lint, release metadata, template rendering and simulated ingress asset checks pass locally.
+- No live Home Assistant or BACnet device verification has been performed. The fix addresses an identified blocking risk; resolution of the reported live backend stall still needs confirmation.
+
 # 1.3.17
 23/10/2026
 
