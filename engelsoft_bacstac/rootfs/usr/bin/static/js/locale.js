@@ -1,6 +1,17 @@
 // Created by engelsofta in 2026 for the modified Engelsoft BACstac distribution.
 (() => {
   const translations = [
+    ["Lokale Zeitsynchronisierung", "Local time synchronization"],
+    ["UTC-Zeitsynchronisierung", "UTC time synchronization"],
+    ["Täglich lokale Gerätezeit setzen · Standard: Aus", "Set local device time daily · Default: Off"],
+    ["Täglich Gerätezeit über UTC setzen · Standard: Aus", "Set device time via UTC daily · Default: Off"],
+    ["Gerät für Zeittest", "Device for time test"], ["Gerät auswählen", "Select device"],
+    ["Sendet die aktuelle Zeit an dieses Gerät und liest sie zur Kontrolle zurück. UTC-Offset und Sommerzeitstatus werden vom Gerät gelesen. Aktivierte Dienste laufen täglich um 12:00 UTC (13:00 Winterzeit / 14:00 Sommerzeit in Deutschland). UTC hat Vorrang, wenn beide aktiviert sind.", "Sends the current time to this device and reads it back for verification. UTC offset and daylight saving status are read from the device. Enabled services run daily at 12:00 UTC (13:00 winter / 14:00 summer in Germany). UTC takes precedence when both are enabled."],
+    ["Lokale Zeit setzen und prüfen", "Set local time and verify"], ["UTC-Zeit setzen und prüfen", "Set UTC time and verify"],
+    ["Bitte Gerät auswählen.", "Please select a device."], ["Zeit wird gesetzt und geprüft …", "Setting and verifying time …"],
+    ["Gesendet; Gerätezeit konnte nicht zurückgelesen werden.", "Sent; device time could not be read back."],
+    ["Gerätezeit stimmt überein", "Device time matches"], ["Gerätezeit weicht ab", "Device time differs"],
+    ["Keine Empfangsbestätigung des Zeitbefehls.", "No receipt acknowledgement for the time command."],
     ["BACnet/IP-Schnittstelle", "BACnet/IP interface"],
     ["Geräte, Objekte und aktuelle Werte", "Devices, objects and current values"],
     ["BACnet-Integration in Home Assistant öffnen", "Open BACnet integration in Home Assistant"],

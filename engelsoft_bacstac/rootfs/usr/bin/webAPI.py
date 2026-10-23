@@ -12,6 +12,7 @@ import shutil
 import time
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 from random import choice, randint
 from typing import Annotated, Any, Callable, Union
 
@@ -29,6 +30,7 @@ from pydantic import TypeAdapter
 from app_utils import bacnet_identifier_sort_key
 from device_protection import DEFAULT_RULE, remove_rule, upsert_rule
 from runtime_settings import load as load_runtime_settings, save as save_runtime_settings
+from time_sync import supported_mode, synchronize
 
 # ===================================================
 # Global variables
@@ -367,6 +369,7 @@ def runtime_settings_payload() -> dict:
     if application is None:
         return load_runtime_settings()
     return {
+        **load_runtime_settings(),
         "managed_poll_rate": application.managed_poll_rate,
         "managed_cov_subscription_delay_ms": round(application.managed_cov_subscription_delay_seconds * 1000),
         "managed_cov_fallback_timeout": application.managed_cov_fallback_timeout,
@@ -421,6 +424,63 @@ async def set_runtime_settings(request: Request):
     application.default_write_priority = settings["defaultPriority"]
     await application.reapply_managed_targets()
     return settings
+
+
+_time_sync_lock = asyncio.Lock()
+
+
+async def daily_time_sync():
+    """Run once daily at 12:00 UTC, avoiding daylight-saving transitions."""
+    while True:
+        now = datetime.now(timezone.utc)
+        next_run = now.replace(hour=12, minute=0, second=0, microsecond=0)
+        if next_run <= now:
+            next_run += timedelta(days=1)
+        await asyncio.sleep((next_run - now).total_seconds())
+        application = bacnet_application
+        if application is None:
+            continue
+        for device_id in list(application.bacnet_device_dict):
+            settings = load_runtime_settings()
+            if not (settings["time_sync_local"] or settings["time_sync_utc"]):
+                break
+            try:
+                device = ObjectIdentifier(device_id)
+                if str(device[0]) != "device":
+                    continue
+                address = application.dev_to_addr(device)
+                if address is None:
+                    continue
+                async with _time_sync_lock:
+                    services = await asyncio.wait_for(application.read_property(address, device, "protocolServicesSupported"), 5)
+                    mode = supported_mode(services, load_runtime_settings())
+                    if mode:
+                        result = await asyncio.wait_for(synchronize(application, device_id, mode), 45)
+                        LOGGER.info("Daily %s time synchronization for %s: %s", mode, device_id, result)
+            except Exception:
+                LOGGER.warning("Daily time synchronization failed for %s", device_id, exc_info=True)
+
+
+@app.post("/apiv1/time-sync", tags=["apiv1"])
+async def test_time_sync(request: Request):
+    if bacnet_application is None:
+        return Response(status_code=503)
+    try:
+        payload = await request.json()
+        mode = payload.get("mode")
+        if mode not in {"local", "utc"}:
+            raise ValueError("Select local or UTC")
+        if not load_runtime_settings()[f"time_sync_{mode}"]:
+            raise ValueError("Enable and save the selected synchronization mode first")
+        if _time_sync_lock.locked():
+            return Response(content="Time synchronization already running", status_code=409)
+        async with _time_sync_lock:
+            return await asyncio.wait_for(synchronize(bacnet_application, payload["device_id"], mode), 45)
+    except (ValueError, TypeError, KeyError) as err:
+        return Response(content=str(err), status_code=422)
+    except Exception:
+        LOGGER.exception("BACnet time synchronization failed")
+        return Response(content="BACnet time synchronization failed; check device connectivity and properties", status_code=502)
 
 
 @app.get("/apiv1/devices/{device_id}/objects", tags=["apiv1"])

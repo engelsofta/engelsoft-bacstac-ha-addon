@@ -437,6 +437,7 @@ async def main():
 
     webAPI.sub_list = app.subscription_tasks
     webAPI.bacnet_application = app
+    time_sync_task = asyncio.create_task(webAPI.daily_time_sync(), name="daily-time-sync")
     webAPI.bacnet_device_dict = app.bacnet_device_dict
     webAPI.who_is_func = app.who_is
     webAPI.i_am_func = app.i_am
@@ -456,6 +457,8 @@ async def main():
     try:
         await server.serve()
     finally:
+        time_sync_task.cancel()
+        await asyncio.gather(time_sync_task, return_exceptions=True)
         update_task.cancel()
         write_task.cancel()
         sub_task.cancel()

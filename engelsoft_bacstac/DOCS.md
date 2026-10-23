@@ -197,3 +197,14 @@ BACnet UDP port conflict.
 ## Credits
 
 Engelsoft BACstac is maintained by `engelsofta` and derived from the original Bepacom BACnet/IP add-on. See `NOTICE` and `LICENSE` in the repository root.
+
+### Device time synchronization
+
+The Runtime tab offers independent local-time and UTC-time synchronization switches.
+Both default to off. Save the enabled mode, select a device, and use its set-and-verify
+button. Enabled modes also run daily at 12:00 UTC for discovered devices with live addresses. UTC takes precedence when both modes are enabled. No broadcast is performed. The recipient must
+advertise the corresponding service and expose its UTC offset, daylight saving status,
+local date and local time. These properties are read live before sending.
+The subsequent read-back reports whether the clock matches within five seconds;
+this does not acknowledge receipt or prove a previously correct clock was changed.
+An unreadable verification is reported separately from a matching or differing clock.

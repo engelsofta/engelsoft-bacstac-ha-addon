@@ -2,6 +2,29 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.3.16
+23/10/2026
+
+## Your BACnet devices called. They want their time back.
+
+### Added — tick-tock, who's there? A punctual controller.
+- Add separate local-time and UTC synchronization switches in Runtime settings. Both start **off** — your clocks keep their freedom until you click Apply.
+- Run enabled synchronization daily at **12:00 UTC** for discovered devices with live addresses. UTC gets the front seat when both services are enabled; local time rides along only where supported and needed.
+- Add **Set time and verify** buttons for a selected device. Send the current time, read the clock back, and find out whether your controller lives in today or has developed a nostalgic attachment to 2020.
+- Check the recipient's supported services, UTC offset and daylight-saving status before sending. The container's timezone has been politely asked to mind its own business.
+
+### Safety — no clock-shaped confetti cannons
+- Address individual devices instead of broadcasting time across the network.
+- Keep synchronization disabled by default and persist your choices across restarts.
+- Report matching clocks, remaining drift and unavailable read-back separately. A clock matching within five seconds is useful evidence, not a signed receipt from the time police.
+- Serialize manual and scheduled synchronization so two clock setters do not start an argument.
+- Add German and English labels and refresh Web UI cache keys.
+
+### Validation — trust, but check the wristwatch
+- All 21 unit tests pass, including both BACnet services, UTC preference, disabled defaults, unsupported devices, incorrect clocks and failed read-back.
+- Template rendering and simulated Home Assistant ingress asset loading pass.
+- No live BACnet device or live Home Assistant verification has been performed for this release.
+
 # 1.3.15
 20/10/2026
 

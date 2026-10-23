@@ -13,10 +13,12 @@ DEFAULTS = {
     "managed_cov_subscription_delay_ms": 1000,
     "managed_cov_fallback_timeout": 30,
     "defaultPriority": 15,
+    "time_sync_local": False,
+    "time_sync_utc": False,
 }
 
 
-def normalize(values: dict[str, Any] | None) -> dict[str, int]:
+def normalize(values: dict[str, Any] | None) -> dict[str, int | bool]:
     data = DEFAULTS.copy()
     data.update(values or {})
     return {
@@ -24,10 +26,17 @@ def normalize(values: dict[str, Any] | None) -> dict[str, int]:
         "managed_cov_subscription_delay_ms": min(30000, max(0, int(data["managed_cov_subscription_delay_ms"]))),
         "managed_cov_fallback_timeout": min(600, max(10, int(data["managed_cov_fallback_timeout"]))),
         "defaultPriority": min(16, max(1, int(data["defaultPriority"]))),
+        **{key: _boolean(data[key]) for key in ("time_sync_local", "time_sync_utc")},
     }
 
 
-def save(values: dict[str, Any]) -> dict[str, int]:
+def _boolean(value: Any) -> bool:
+    if not isinstance(value, bool):
+        raise ValueError("Time synchronization settings must be boolean")
+    return value
+
+
+def save(values: dict[str, Any]) -> dict[str, int | bool]:
     settings = normalize(values)
     directory = os.path.dirname(CONFIG_PATH)
     if directory:
@@ -40,7 +49,7 @@ def save(values: dict[str, Any]) -> dict[str, int]:
     return settings
 
 
-def load(legacy: dict[str, Any] | None = None) -> dict[str, int]:
+def load(legacy: dict[str, Any] | None = None) -> dict[str, int | bool]:
     try:
         with open(CONFIG_PATH, encoding="utf-8") as settings_file:
             payload = json.load(settings_file)
