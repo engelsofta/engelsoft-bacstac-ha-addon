@@ -32,7 +32,7 @@
   --shadow:0 8px 24px rgba(36,40,45,.09);
   --card-background:rgba(250,249,247,.93); --card-border:rgba(54,58,63,.16);
   --card-shadow:0 8px 24px rgba(36,40,45,.09),inset 0 1px rgba(255,255,255,.5);
-  --page-background:linear-gradient(115deg,rgba(241,245,248,.88),rgba(248,244,233,.86)),url('../images/engelsoft-background-light.png') center / cover fixed,#edf0f2;
+  --page-background:linear-gradient(115deg,rgba(244,247,250,.88),rgba(250,247,240,.86)),url('../images/engelsoft-background-light.png') center center / cover fixed,#dfe5e9;
 }
 [hidden] { display:none!important; }
 body { background:var(--page-background); font-family:"Segoe UI Variable Text","Segoe UI",-apple-system,BlinkMacSystemFont,sans-serif; }

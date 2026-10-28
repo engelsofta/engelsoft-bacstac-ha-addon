@@ -203,8 +203,14 @@ Engelsoft BACstac is maintained by `engelsofta` and derived from the original Be
 The Runtime tab offers independent local-time and UTC-time synchronization switches.
 Both default to off. Save the enabled mode, select a device, and use its set-and-verify
 button. Enabled modes also run daily at 12:00 UTC for discovered devices with live addresses. UTC takes precedence when both modes are enabled. No broadcast is performed. The recipient must
-advertise the corresponding service and expose its UTC offset, daylight saving status,
-local date and local time. These properties are read live before sending.
+advertise the corresponding service and expose its local date and local time.
+Local commands and verification use `Europe/Berlin`, including automatic daylight
+saving changes, independently of the container timezone and the device's reported
+UTC offset or daylight saving status. This applies to all synchronized devices;
+use this feature only for devices intended to keep German local time.
+UTC commands still send UTC unchanged; the recipient must convert it to local time.
+An incorrect device conversion now reports a mismatch instead of a false success.
+Device timezone settings are not modified.
 The subsequent read-back reports whether the clock matches within five seconds;
 this does not acknowledge receipt or prove a previously correct clock was changed.
 An unreadable verification is reported separately from a matching or differing clock.

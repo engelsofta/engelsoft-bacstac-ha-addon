@@ -2,6 +2,26 @@
 
 <!-- Modified by engelsofta in 2026 for Engelsoft BACstac; derived from the Bepacom BACnet/IP add-on. -->
 
+# 1.3.20
+29/10/2026
+
+## Fall back, spring forward — stop living in the wrong hour.
+
+### Fixed — the clock no longer grades its own homework
+- Calculate local synchronization commands using `Europe/Berlin`, including automatic summer/winter time changes and midnight date rollover.
+- Verify the returned local device time against that independent timezone reference for both local and UTC synchronization. A device reporting UTC offset zero can no longer make an incorrect German local time look correct.
+- Keep UTC commands in UTC. Devices receiving UTC synchronization still need to convert UTC correctly; a wrong conversion is now reported as a mismatch.
+- Stop requiring the device's UTC offset and daylight saving status for synchronization. Controller timezone properties are not modified.
+- Include timezone data in the app image and update the German/English explanation of the time test. These synchronization controls target devices intended to keep German local time.
+
+### Changed — a brighter outlook
+- Match the light-mode background overlay and base color to the companion Beacon BACnet integration; the background image was already identical.
+- Refresh Web UI cache keys for the new release.
+
+### Validation — tested without time-travelling the heating system
+- All 27 unit tests pass, including the 2027 spring/autumn transitions, midnight rollover, local and UTC commands, and an incorrect device offset of zero.
+- Live device reads confirmed the motivating offset discrepancy; the updated synchronization has not yet been installed or tested against the physical controller.
+
 # 1.3.19
 23/10/2026
 

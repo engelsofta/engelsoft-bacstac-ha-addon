@@ -17,6 +17,7 @@ COPY requirements.txt ./requirements.txt
 RUN \
   apk add --no-cache \
     nginx \
+    tzdata \
     python3 \
     py3-pip \
     py3-setuptools \
